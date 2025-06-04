@@ -15,28 +15,18 @@ import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 // Global variables
-let scene,
-  renderer,
-  camera,
-  controls,
-  statuemesh,
-  envMap,
-  material,
-  alternativeMaterial;
+let scene, renderer, camera, controls, statuemesh, envMap, material;
 let composer, bloomPass, bokehPass;
 let mixer,
   animations,
   animationActions = [];
-let lineHandler, dustParticles;
+let dustParticles;
 let clock = new THREE.Clock();
-let gui, scrollTimeline, dofTimeline;
-let cursorLight, cursorLightFar, cursorLightFar2; // Added second far light
-let cursorLightFarHelper, cursorLightFarHelper2; // Added helpers
-let rightlight, leftlight; // Store light references
+let gui;
+let cursorLightFar, cursorLightFar2;
+let cursorLightFarHelper, cursorLightFarHelper2;
 
 // Mouse rotation variables
 let mouse = new THREE.Vector2();
@@ -48,49 +38,22 @@ let isMouseMoving = false;
 let mouseTimeout;
 let statueGroup;
 
-// ================================
-// CONFIGURATION - EASY TO MODIFY
-// ================================
 const config = {
-  final: false,
-
-  // Regular lighting (final = true)
-  rightlightIntensity: 10,
-  rightlightColor: 0xff0000,
-  leftlightIntensity: 20,
-  lefttlightColor: 0x0000ff,
-
   // Bloom settings
   bloom: {
-    // Final mode bloom
-    finalStrength: 0.2,
-    finalRadius: 2.0,
-    // Non-final mode bloom (increased for dramatic effect)
-    nonFinalStrength: 0.3,
-    nonFinalRadius: 2.0,
+    strength: 0.3,
+    radius: 2.0,
     threshold: 0.05,
   },
 
   // Cursor lights
-  cursorLight: {
-    enabled: true,
-    color: new THREE.Color(0xfcd2d8),
-    intensity: 1,
-    distance: 20,
-    decay: 1,
-    depth: 4,
-    smoothing: 0.5,
-  },
   cursorLightFar: {
     enabled: true,
-    // Colors for different modes
-    finalColor: 0xc337ff, // Purple for final mode
-    nonFinalColor: 0xf1f1ff, // White for non-final mode
+    color: 0xf1f1ff, // White color
     intensity: 0.5,
     distance: 20,
     decay: 0.5,
-    finalDepth: 10, // Original depth for final mode
-    nonFinalDepth: 6, // Closer depth for non-final mode
+    depth: 6, // Closer depth
     smoothing: 0.1,
     xOffset: 1.2, // X offset for the two lights
   },
@@ -117,12 +80,6 @@ const config = {
   insideLineOpacity: 1,
 };
 
-const dofFocusPoints = [
-  { position: 0, focus: 5.5 },
-  { position: 0.6, focus: 0.2 },
-  { position: 1, focus: 0.1 },
-];
-
 // Create scene
 scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
@@ -130,7 +87,6 @@ scene.background = new THREE.Color(0x000000);
 const loadingManager = new THREE.LoadingManager();
 
 onMounted(() => {
-  gsap.registerPlugin(ScrollTrigger);
   // Loading manager
   loadingManager.onLoad = () => {
     init();
@@ -143,20 +99,8 @@ onMounted(() => {
   hdriLoader.load("images/03.hdr", function (texture) {
     envMap = texture;
     envMap.mapping = THREE.EquirectangularReflectionMapping;
-    const normal = new THREE.TextureLoader().load("./images/normal.jpg");
 
-    material = new THREE.MeshPhysicalMaterial({
-      color: 0x000000,
-      normalMap: normal,
-      metalness: 0.1,
-      roughness: 0.5,
-      thickness: 0.5,
-      side: THREE.DoubleSide,
-      envMap: envMap,
-      envMapIntensity: 0.3,
-    });
-
-    alternativeMaterial = new THREE.MeshStandardMaterial({
+    material = new THREE.MeshStandardMaterial({
       color: 0x00000,
       // wireframe: true,
       roughness: 0.5,
@@ -196,163 +140,9 @@ onMounted(() => {
         action.play();
         animationActions.push(action);
       }
-
-      createAnimationController(mixer, animationActions, animations);
-
-      lineHandler = new useLineHandler(config);
-      lineHandler.createCurvesFromEdgeModel(gltf.scene).forEach((curve) => {
-        curve.renderOrder = -1;
-        scene.add(curve);
-      });
     }
   });
 });
-
-function createAnimationController(mixer, actions, clips) {
-  let proxy = {
-    get time() {
-      return mixer.time;
-    },
-    set time(value) {
-      actions.forEach((action) => {
-        action.paused = false;
-      });
-      mixer.setTime(value);
-      actions.forEach((action) => {
-        action.paused = true;
-      });
-    },
-  };
-
-  proxy.time = 0;
-  const maxDuration = Math.max(...clips.map((clip) => clip.duration));
-
-  scrollTimeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: document.body,
-      start: "top top",
-      end: "bottom bottom",
-      scrub: true,
-      onUpdate: function (self) {
-        proxy.time = self.progress * maxDuration;
-      },
-    },
-  });
-
-  window.scrollTo(0, 0);
-}
-
-function createDOFScrollAnimation() {
-  const dofProxy = { focus: dofFocusPoints[0].focus };
-
-  dofTimeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: document.body,
-      start: "top top",
-      end: "bottom bottom",
-      scrub: true,
-    },
-  });
-
-  dofTimeline.to(dofProxy, {
-    focus: dofFocusPoints[1].focus,
-    duration: 0.5,
-    ease: "none",
-    onUpdate: function () {
-      updateDOFFocus(dofProxy.focus);
-    },
-  });
-
-  dofTimeline.to(dofProxy, {
-    focus: dofFocusPoints[2].focus,
-    duration: 0.5,
-    ease: "none",
-    onUpdate: function () {
-      updateDOFFocus(dofProxy.focus);
-    },
-  });
-
-  return dofTimeline;
-}
-
-function updateDOFFocus(focusValue) {
-  if (bokehPass) {
-    config.dof.focus = focusValue;
-    bokehPass.uniforms["focus"].value = focusValue;
-  }
-}
-
-function toggleFinalMode(isFinal) {
-  config.final = isFinal;
-
-  // Update all statue parts materials
-  scene.traverse((child) => {
-    if (
-      child.name &&
-      (child.name.includes("statue_") || child.name.includes("_part"))
-    ) {
-      if (child.material) {
-        child.material = isFinal ? material : alternativeMaterial;
-      }
-    }
-  });
-
-  // Toggle lights based on final mode
-  if (rightlight) {
-    rightlight.visible = isFinal;
-  }
-  if (leftlight) {
-    leftlight.visible = isFinal;
-  }
-  if (cursorLight) {
-    cursorLight.visible = isFinal;
-  }
-
-  // Change both far cursor lights color and depth based on final mode
-  if (cursorLightFar) {
-    cursorLightFar.color.setHex(
-      isFinal
-        ? config.cursorLightFar.finalColor
-        : config.cursorLightFar.nonFinalColor
-    );
-    // Update the config depth for the updateCursorLightPosition function
-    config.cursorLightFar.depth = isFinal
-      ? config.cursorLightFar.finalDepth
-      : config.cursorLightFar.nonFinalDepth;
-  }
-
-  if (cursorLightFar2) {
-    cursorLightFar2.color.setHex(
-      isFinal
-        ? config.cursorLightFar.finalColor
-        : config.cursorLightFar.nonFinalColor
-    );
-  }
-
-  // Update bloom settings based on final mode
-  if (bloomPass) {
-    bloomPass.strength = isFinal
-      ? config.bloom.finalStrength
-      : config.bloom.nonFinalStrength;
-    bloomPass.radius = isFinal
-      ? config.bloom.finalRadius
-      : config.bloom.nonFinalRadius;
-  }
-
-  if (isFinal) {
-    if (scrollTimeline && scrollTimeline.scrollTrigger)
-      scrollTimeline.scrollTrigger.enable();
-    if (dofTimeline && dofTimeline.scrollTrigger)
-      dofTimeline.scrollTrigger.enable();
-  } else {
-    if (scrollTimeline && scrollTimeline.scrollTrigger)
-      scrollTimeline.scrollTrigger.disable();
-    if (dofTimeline && dofTimeline.scrollTrigger)
-      dofTimeline.scrollTrigger.disable();
-  }
-
-  ScrollTrigger.refresh();
-}
 
 function onMouseMove(event) {
   lastMouse.x = mouse.x;
@@ -397,13 +187,6 @@ function updateCursorLightPosition(event) {
   mouse3D.unproject(camera);
   const direction = mouse3D.sub(camera.position).normalize();
 
-  if (cursorLight && config.cursorLight.enabled) {
-    const targetPosition = camera.position
-      .clone()
-      .add(direction.clone().multiplyScalar(config.cursorLight.depth));
-    cursorLight.position.lerp(targetPosition, config.cursorLight.smoothing);
-  }
-
   if (cursorLightFar && config.cursorLightFar.enabled) {
     const targetPositionFar = camera.position
       .clone()
@@ -430,15 +213,6 @@ function updateCursorLightPosition(event) {
 }
 
 function createCursorLights() {
-  cursorLight = new THREE.PointLight(
-    config.cursorLight.color,
-    config.cursorLight.intensity,
-    config.cursorLight.distance,
-    config.cursorLight.decay
-  );
-  cursorLight.position.set(0, 0, config.cursorLight.depth);
-  scene.add(cursorLight);
-
   // First far cursor light
   cursorLightFar = new THREE.PointLight(
     config.cursorLightFar.color,
@@ -456,9 +230,7 @@ function createCursorLights() {
     // Position behind the camera with X offset
     const initialPosition = camera.position
       .clone()
-      .add(
-        cameraForward.clone().multiplyScalar(-config.cursorLightFar.finalDepth)
-      );
+      .add(cameraForward.clone().multiplyScalar(-config.cursorLightFar.depth));
     initialPosition.x += config.cursorLightFar.xOffset;
     cursorLightFar.position.copy(initialPosition);
   } else {
@@ -466,7 +238,7 @@ function createCursorLights() {
     cursorLightFar.position.set(
       config.cursorLightFar.xOffset,
       0,
-      -config.cursorLightFar.finalDepth
+      -config.cursorLightFar.depth
     );
   }
 
@@ -489,9 +261,7 @@ function createCursorLights() {
     // Position behind the camera with negative X offset
     const initialPosition2 = camera.position
       .clone()
-      .add(
-        cameraForward.clone().multiplyScalar(-config.cursorLightFar.finalDepth)
-      );
+      .add(cameraForward.clone().multiplyScalar(-config.cursorLightFar.depth));
     initialPosition2.x -= config.cursorLightFar.xOffset;
     cursorLightFar2.position.copy(initialPosition2);
   } else {
@@ -499,7 +269,7 @@ function createCursorLights() {
     cursorLightFar2.position.set(
       -config.cursorLightFar.xOffset,
       0,
-      -config.cursorLightFar.finalDepth
+      -config.cursorLightFar.depth
     );
   }
 
@@ -545,28 +315,6 @@ function initStatueGroup() {
     child.scale.copy(worldScale);
   });
 
-  if (lineHandler && lineHandler.getLineCurves) {
-    const lineCurves = lineHandler.getLineCurves();
-    lineCurves.forEach((curve) => {
-      const worldPosition = new THREE.Vector3();
-      const worldQuaternion = new THREE.Quaternion();
-      const worldScale = new THREE.Vector3();
-
-      curve.getWorldPosition(worldPosition);
-      curve.getWorldQuaternion(worldQuaternion);
-      curve.getWorldScale(worldScale);
-
-      if (curve.parent) curve.parent.remove(curve);
-      else scene.remove(curve);
-
-      statueGroup.add(curve);
-
-      curve.position.copy(worldPosition);
-      curve.quaternion.copy(worldQuaternion);
-      curve.scale.copy(worldScale);
-    });
-  }
-
   scene.add(statueGroup);
 
   statueGroup.userData.originalPosition = statueGroup.position.clone();
@@ -609,8 +357,8 @@ function init() {
 
   bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    config.bloom.finalStrength,
-    config.bloom.finalRadius,
+    config.bloom.strength,
+    config.bloom.radius,
     config.bloom.threshold
   );
 
@@ -647,21 +395,6 @@ function init() {
   controls.dampingFactor = config.orbitControls.dampingFactor;
   controls.enabled = config.orbitControls.enabled;
 
-  // Store light references for later visibility control
-  rightlight = new THREE.PointLight(
-    config.rightlightColor,
-    config.rightlightIntensity
-  );
-  rightlight.position.set(-10, 0, 0);
-  scene.add(rightlight);
-
-  leftlight = new THREE.PointLight(
-    config.lefttlightColor,
-    config.leftlightIntensity
-  );
-  leftlight.position.set(10, 0, 0);
-  scene.add(leftlight);
-
   window.addEventListener("resize", onWindowResize);
 
   if (camera) camera.userData.defaultPosition = camera.position.clone();
@@ -669,10 +402,6 @@ function init() {
   createCursorLights();
   initGUI();
   dustParticles = new useDustParticles(scene, config.dustParticles);
-  createDOFScrollAnimation();
-
-  // Apply initial lighting state based on config.final
-  toggleFinalMode(config.final);
 }
 
 function onWindowResize() {
@@ -718,7 +447,6 @@ function animate() {
   }
 
   if (controls.enabled) controls.update();
-  if (lineHandler) lineHandler.animate(delta);
   if (dustParticles) dustParticles.animate(delta);
 
   // Update light helpers to follow their respective lights
@@ -735,16 +463,10 @@ function animate() {
 function initGUI() {
   const { $dat } = useNuxtApp();
   gui = new $dat.GUI({ width: 200 });
-  gui
-    .add(config, "final")
-    .name("Final")
-    .onChange((value) => {
-      toggleFinalMode(value);
-    });
 
-  // Add far light color
+  // Add far light color control
   const farLightColorControl = {
-    color: config.cursorLightFar.finalColor,
+    color: config.cursorLightFar.color,
   };
 
   gui
@@ -753,12 +475,7 @@ function initGUI() {
     .onChange((value) => {
       if (cursorLightFar) {
         cursorLightFar.color.setHex(value);
-        // Update the config values
-        if (config.final) {
-          config.cursorLightFar.finalColor = value;
-        } else {
-          config.cursorLightFar.nonFinalColor = value;
-        }
+        config.cursorLightFar.color = value;
       }
       if (cursorLightFar2) {
         cursorLightFar2.color.setHex(value);

@@ -1,10 +1,23 @@
 <template>
-  <div class="default-layout">
-    <slot />
-  </div>
+  <Html
+    :class="[
+      {
+        'is-loaded': homeStore.websiteLoaded,
+      },
+    ]"
+  >
+    <Body>
+      <div class="default-layout">
+        <slot />
+      </div>
+    </Body>
+  </Html>
 </template>
 
 <script setup>
+import { useHomeStore } from "@/store/home";
+const homeStore = useHomeStore();
+
 useSeoMeta({
   title: "Amanita",
   ogTitle: "Amanita",
@@ -13,8 +26,9 @@ useSeoMeta({
   // ogImage: "",
   // twitterCard: "summary_large_image",
 });
+
 onMounted(() => {
-  document.documentElement.classList.add("is-loaded");
+  homeStore.changeWebsiteLoaded(true);
 });
 </script>
 

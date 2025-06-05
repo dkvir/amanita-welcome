@@ -1,7 +1,7 @@
 <template>
   <div class="home-page">
     <canvas id="canvas"></canvas>
-    <div class="split">
+    <div class="split uppercase">
       Lorem ipsum dolor sit amet consectetur adipisicing elit. Cupiditate
       perferendis, quia at nihil praesentium doloremque. Soluta fuga magnam
       itaque sequi odio animi ab labore sint, porro facere corrupti molestiae
@@ -97,7 +97,29 @@ onMounted(() => {
   gsap.registerPlugin(SplitText);
 
   setTimeout(() => {
-    let split = SplitText.create(".split", { type: "lines, words" });
+    let split = SplitText.create(".split", {
+      type: "lines, words",
+      mask: "lines",
+      linesClass: "lines",
+    });
+    console.log(split);
+
+    gsap.set(split.lines, {
+      yPercent: 100,
+    });
+
+    setTimeout(() => {
+      gsap.set(".split", {
+        opacity: 1,
+        ease: "power2.out",
+      });
+      gsap.to(split.lines, {
+        yPercent: 0,
+        ease: "power2.out",
+        duration: 1.5,
+        stagger: 0.1,
+      });
+    }, 500);
   }, 500);
 
   // Loading manager
@@ -506,14 +528,19 @@ function initGUI() {
   #canvas {
     @include size(100%);
   }
-  .split {
+  :deep(.split) {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate3d(-50%, -50%, 0);
     color: var(--color-white);
     font-size: 26px;
-    opacity: var(--split-opacity);
+    opacity: var(--split-opacity, 0);
+    text-align: center;
+    line-height: 1.5;
+    .lines-mask {
+      overflow: hidden;
+    }
   }
 }
 </style>

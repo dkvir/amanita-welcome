@@ -1,4 +1,4 @@
-export const useHomeStore = defineStore("homeStore", {
+export const useHomeStore = defineStore("home", {
   state: () => ({
     websiteLoaded: false,
   }),

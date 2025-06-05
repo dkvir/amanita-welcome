@@ -180,12 +180,12 @@ function onMouseMove(event) {
       Math.min(0.5, rotationOffset.y - deltaX * mouseMoveFactor.value)
     );
 
-    // clearTimeout(mouseTimeout);
-    // isMouseMoving = true;
+    clearTimeout(mouseTimeout);
+    isMouseMoving = true;
 
-    // mouseTimeout = setTimeout(() => {
-    //   isMouseMoving = false;
-    // }, 100);
+    mouseTimeout = setTimeout(() => {
+      isMouseMoving = false;
+    }, 100);
   }
 
   updateCursorLightPosition(event);
@@ -450,10 +450,10 @@ function animate() {
   const delta = clock.getDelta();
   requestAnimationFrame(animate);
 
-  if (!isMouseMoving) {
-    rotationOffset.x += (0 - rotationOffset.x) * returnFactor.value;
-    rotationOffset.y += (0 - rotationOffset.y) * returnFactor.value;
-  }
+  // if (!isMouseMoving) {
+  //   rotationOffset.x += (0 - rotationOffset.x) * returnFactor.value;
+  //   rotationOffset.y += (0 - rotationOffset.y) * returnFactor.value;
+  // }
 
   if (statueGroup) {
     statueGroup.rotation.x =

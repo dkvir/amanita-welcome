@@ -188,7 +188,7 @@ function onMouseMove(event) {
     }, 100);
   }
 
-  updateCursorLightPosition(event);
+  // updateCursorLightPosition(event);
 }
 
 function updateCursorLightPosition(event) {

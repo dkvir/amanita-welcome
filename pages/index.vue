@@ -90,9 +90,9 @@ scene.background = new THREE.Color(0x000000);
 const loadingManager = new THREE.LoadingManager();
 
 onMounted(() => {
-  gsap.registerPlugin(SplitText);
-
   setTimeout(() => {
+    gsap.registerPlugin(SplitText);
+
     let split = SplitText.create(".split", {
       type: "lines, words",
       mask: "lines",
@@ -120,7 +120,7 @@ onMounted(() => {
   // Loading manager
   loadingManager.onLoad = () => {
     init();
-    initStatueGroup();
+    // initStatueGroup();
     animate();
   };
 

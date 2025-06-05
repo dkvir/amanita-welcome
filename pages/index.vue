@@ -26,12 +26,8 @@ import gsap from "gsap";
 // Global variables
 let scene, renderer, camera, controls, statuemesh, envMap, material;
 let composer, bloomPass, bokehPass;
-let mixer,
-  animations,
-  animationActions = [];
 let dustParticles;
 let clock = new THREE.Clock();
-let gui;
 let cursorLightFar, cursorLightFar2;
 let cursorLightFarHelper, cursorLightFarHelper2;
 
@@ -102,7 +98,6 @@ onMounted(() => {
       mask: "lines",
       linesClass: "lines",
     });
-    console.log(split);
 
     gsap.set(split.lines, {
       yPercent: 100,
@@ -117,7 +112,7 @@ onMounted(() => {
         yPercent: 0,
         ease: "power2.out",
         duration: 1.5,
-        stagger: 0.1,
+        stagger: 0.2,
       });
     }, 500);
   }, 500);
@@ -162,20 +157,6 @@ onMounted(() => {
     });
 
     scene.add(gltf.scene);
-
-    if (gltf.animations && gltf.animations.length > 0) {
-      animations = gltf.animations;
-      mixer = new THREE.AnimationMixer(gltf.scene);
-
-      for (let i = 0; i < animations.length; i++) {
-        const action = mixer.clipAction(animations[i]);
-        action.timeScale = 1;
-        action.setLoop(THREE.LoopOnce);
-        action.clampWhenFinished = true;
-        action.play();
-        animationActions.push(action);
-      }
-    }
   });
 });
 
@@ -435,7 +416,7 @@ function init() {
   if (camera) camera.userData.defaultPosition = camera.position.clone();
 
   createCursorLights();
-  initGUI();
+  // initGUI();
   dustParticles = new useDustParticles(scene, config.dustParticles);
 }
 
@@ -497,7 +478,7 @@ function animate() {
 
 function initGUI() {
   const { $dat } = useNuxtApp();
-  gui = new $dat.GUI({ width: 200 });
+  const gui = new $dat.GUI({ width: 200 });
 
   // Add far light color control
   const farLightColorControl = {

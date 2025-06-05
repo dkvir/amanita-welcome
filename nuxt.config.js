@@ -2,7 +2,24 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-05-15",
   devtools: { enabled: false },
-  modules: ["nuxt-icons", "@pinia/nuxt"],
+  app: {
+    head: {
+      meta: [
+        { charset: "utf-8" },
+        {
+          name: "viewport",
+          content:
+            "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
+        },
+        { name: "pinterest", content: "nopin" },
+        { name: "google", content: "notranslate" },
+        // ...favicon.meta,
+      ],
+      // link: [...favicon.links],
+      // script: [{ src: "/js/InertiaPlugin.min.js" }],
+    },
+  },
+  modules: ["nuxt-icons", "@pinia/nuxt", "@nuxtjs/robots", "@nuxtjs/sitemap"],
   css: ["@/assets/sass/style.scss"],
   vite: {
     css: {

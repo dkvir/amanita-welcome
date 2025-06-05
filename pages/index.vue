@@ -344,7 +344,7 @@ function initStatueGroup() {
   lastMouse.set(0, 0);
   rotationOffset.set(0, 0);
 
-  // window.addEventListener("mousemove", onMouseMove, false);
+  window.addEventListener("mousemove", onMouseMove, false);
 }
 
 function init() {

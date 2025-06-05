@@ -13,6 +13,9 @@ useSeoMeta({
   // ogImage: "",
   // twitterCard: "summary_large_image",
 });
+onMounted(() => {
+  document.documentElement.classList.add("is-loaded");
+});
 </script>
 
 <style lang="scss" scoped></style>

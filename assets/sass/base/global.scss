@@ -13,12 +13,13 @@ body {
 
 html {
   font-size: 16px;
-  font-family: var(--font-evex-regular);
+  font-family: var(--font-intertightblack);
   color: var(--color-white);
   background-color: var(--color-black);
+  opacity: var(--html-opacity, 0);
   transition: 0.75s opacity ease-in-out;
-  &.is-loading {
-    opacity: 0;
+  &.is-loaded {
+    --html-opacity: 1;
   }
 }
 

@@ -16,7 +16,7 @@ export default defineNuxtConfig({
         // ...favicon.meta,
       ],
       // link: [...favicon.links],
-      // script: [{ src: "/js/InertiaPlugin.min.js" }],
+      script: [{ src: "/js/SplitText.min.js" }],
     },
   },
   modules: ["nuxt-icons", "@pinia/nuxt", "@nuxtjs/robots", "@nuxtjs/sitemap"],

@@ -1,6 +1,12 @@
 <template>
   <div class="home-page">
     <canvas id="canvas"></canvas>
+    <div class="split">
+      Lorem ipsum dolor sit amet consectetur adipisicing elit. Cupiditate
+      perferendis, quia at nihil praesentium doloremque. Soluta fuga magnam
+      itaque sequi odio animi ab labore sint, porro facere corrupti molestiae
+      nostrum!
+    </div>
   </div>
 </template>
 
@@ -15,6 +21,7 @@ import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
+import gsap from "gsap";
 
 // Global variables
 let scene, renderer, camera, controls, statuemesh, envMap, material;
@@ -87,6 +94,12 @@ scene.background = new THREE.Color(0x000000);
 const loadingManager = new THREE.LoadingManager();
 
 onMounted(() => {
+  gsap.registerPlugin(SplitText);
+
+  setTimeout(() => {
+    let split = SplitText.create(".split", { type: "lines, words" });
+  }, 500);
+
   // Loading manager
   loadingManager.onLoad = () => {
     init();
@@ -486,11 +499,21 @@ function initGUI() {
 
 <style lang="scss" scoped>
 .home-page {
+  position: relative;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
   #canvas {
     @include size(100%);
+  }
+  .split {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate3d(-50%, -50%, 0);
+    color: var(--color-white);
+    font-size: 26px;
+    opacity: var(--split-opacity);
   }
 }
 </style>

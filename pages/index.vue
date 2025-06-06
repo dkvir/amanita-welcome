@@ -300,7 +300,7 @@ function createCursorLights() {
     );
 
     // Get camera's forward direction
-    const cameraForward = new THREE.Vector3(0, 0, -1);
+    const cameraForward = new THREE.Vector3(0, 0, 1);
     cameraForward.transformDirection(camera.matrixWorld);
 
     // Position behind the camera with X offset

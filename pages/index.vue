@@ -148,7 +148,6 @@ onMounted(() => {
 
       isEnvironmentLoaded = true;
       console.log("Environment loaded");
-      checkIfReadyToStart();
     },
     undefined,
     (error) => {

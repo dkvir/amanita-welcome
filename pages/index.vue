@@ -122,8 +122,9 @@ onMounted(() => {
     }, 500);
   }, 500);
   loadingManager.onLoad = () => {
-    console.log("All resources loaded");
-    checkIfReadyToStart();
+    setTimeout(() => {
+      checkIfReadyToStart();
+    }, 500);
   };
 
   loadingManager.onError = (error) => {

@@ -188,7 +188,7 @@ function onMouseMove(event) {
     }, 100);
   }
 
-  // updateCursorLightPosition(event);
+  updateCursorLightPosition(event);
 }
 
 function updateCursorLightPosition(event) {
@@ -455,23 +455,23 @@ function animate() {
   //   rotationOffset.y += (0 - rotationOffset.y) * returnFactor.value;
   // }
 
-  if (statueGroup) {
-    statueGroup.rotation.x =
-      statueGroup.userData.originalRotation.x + rotationOffset.x;
-    statueGroup.rotation.y =
-      statueGroup.userData.originalRotation.y + rotationOffset.y;
-  }
+  // if (statueGroup) {
+  //   statueGroup.rotation.x =
+  //     statueGroup.userData.originalRotation.x + rotationOffset.x;
+  //   statueGroup.rotation.y =
+  //     statueGroup.userData.originalRotation.y + rotationOffset.y;
+  // }
 
-  if (controls.enabled) controls.update();
-  if (dustParticles) dustParticles.animate(delta);
+  // if (controls.enabled) controls.update();
+  // if (dustParticles) dustParticles.animate(delta);
 
-  // Update light helpers to follow their respective lights
-  if (cursorLightFarHelper && cursorLightFar) {
-    cursorLightFarHelper.update();
-  }
-  if (cursorLightFarHelper2 && cursorLightFar2) {
-    cursorLightFarHelper2.update();
-  }
+  // // Update light helpers to follow their respective lights
+  // if (cursorLightFarHelper && cursorLightFar) {
+  //   cursorLightFarHelper.update();
+  // }
+  // if (cursorLightFarHelper2 && cursorLightFar2) {
+  //   cursorLightFarHelper2.update();
+  // }
 
   composer.render();
 }

@@ -90,32 +90,32 @@ scene.background = new THREE.Color(0x000000);
 const loadingManager = new THREE.LoadingManager();
 
 onMounted(() => {
-  setTimeout(() => {
-    gsap.registerPlugin(SplitText);
+  // setTimeout(() => {
+  //   gsap.registerPlugin(SplitText);
 
-    let split = SplitText.create(".split", {
-      type: "lines, words",
-      mask: "lines",
-      linesClass: "lines",
-    });
+  //   let split = SplitText.create(".split", {
+  //     type: "lines, words",
+  //     mask: "lines",
+  //     linesClass: "lines",
+  //   });
 
-    gsap.set(split.lines, {
-      yPercent: 100,
-    });
+  //   gsap.set(split.lines, {
+  //     yPercent: 100,
+  //   });
 
-    setTimeout(() => {
-      gsap.set(".split", {
-        opacity: 1,
-        ease: "power2.out",
-      });
-      gsap.to(split.lines, {
-        yPercent: 0,
-        ease: "power2.out",
-        duration: 1.5,
-        stagger: 0.2,
-      });
-    }, 500);
-  }, 500);
+  //   setTimeout(() => {
+  //     gsap.set(".split", {
+  //       opacity: 1,
+  //       ease: "power2.out",
+  //     });
+  //     gsap.to(split.lines, {
+  //       yPercent: 0,
+  //       ease: "power2.out",
+  //       duration: 1.5,
+  //       stagger: 0.2,
+  //     });
+  //   }, 500);
+  // }, 500);
 
   // Loading manager
   loadingManager.onLoad = () => {
@@ -417,7 +417,7 @@ function init() {
 
   createCursorLights();
   // initGUI();
-  dustParticles = new useDustParticles(scene, config.dustParticles);
+  // dustParticles = new useDustParticles(scene, config.dustParticles);
 }
 
 function onWindowResize() {
@@ -450,28 +450,28 @@ function animate() {
   const delta = clock.getDelta();
   requestAnimationFrame(animate);
 
-  // if (!isMouseMoving) {
-  //   rotationOffset.x += (0 - rotationOffset.x) * returnFactor.value;
-  //   rotationOffset.y += (0 - rotationOffset.y) * returnFactor.value;
-  // }
+  if (!isMouseMoving) {
+    rotationOffset.x += (0 - rotationOffset.x) * returnFactor.value;
+    rotationOffset.y += (0 - rotationOffset.y) * returnFactor.value;
+  }
 
-  // if (statueGroup) {
-  //   statueGroup.rotation.x =
-  //     statueGroup.userData.originalRotation.x + rotationOffset.x;
-  //   statueGroup.rotation.y =
-  //     statueGroup.userData.originalRotation.y + rotationOffset.y;
-  // }
+  if (statueGroup) {
+    statueGroup.rotation.x =
+      statueGroup.userData.originalRotation.x + rotationOffset.x;
+    statueGroup.rotation.y =
+      statueGroup.userData.originalRotation.y + rotationOffset.y;
+  }
 
-  // if (controls.enabled) controls.update();
-  // if (dustParticles) dustParticles.animate(delta);
+  if (controls.enabled) controls.update();
+  if (dustParticles) dustParticles.animate(delta);
 
-  // // Update light helpers to follow their respective lights
-  // if (cursorLightFarHelper && cursorLightFar) {
-  //   cursorLightFarHelper.update();
-  // }
-  // if (cursorLightFarHelper2 && cursorLightFar2) {
-  //   cursorLightFarHelper2.update();
-  // }
+  // Update light helpers to follow their respective lights
+  if (cursorLightFarHelper && cursorLightFar) {
+    cursorLightFarHelper.update();
+  }
+  if (cursorLightFarHelper2 && cursorLightFar2) {
+    cursorLightFarHelper2.update();
+  }
 
   composer.render();
 }

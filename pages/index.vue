@@ -31,6 +31,11 @@ let clock = new THREE.Clock();
 let cursorLightFar, cursorLightFar2;
 let cursorLightFarHelper, cursorLightFarHelper2;
 
+// State tracking
+let isSceneReady = false;
+let isModelLoaded = false;
+let isEnvironmentLoaded = false;
+
 // Mouse rotation variables
 let mouse = new THREE.Vector2();
 let lastMouse = new THREE.Vector2();
@@ -90,77 +95,131 @@ scene.background = new THREE.Color(0x000000);
 const loadingManager = new THREE.LoadingManager();
 
 onMounted(() => {
-  // setTimeout(() => {
-  //   gsap.registerPlugin(SplitText);
-
-  //   let split = SplitText.create(".split", {
-  //     type: "lines, words",
-  //     mask: "lines",
-  //     linesClass: "lines",
-  //   });
-
-  //   gsap.set(split.lines, {
-  //     yPercent: 100,
-  //   });
-
-  //   setTimeout(() => {
-  //     gsap.set(".split", {
-  //       opacity: 1,
-  //       ease: "power2.out",
-  //     });
-  //     gsap.to(split.lines, {
-  //       yPercent: 0,
-  //       ease: "power2.out",
-  //       duration: 1.5,
-  //       stagger: 0.2,
-  //     });
-  //   }, 500);
-  // }, 500);
-
-  // Loading manager
+  // Loading manager - wait for ALL resources to load
   loadingManager.onLoad = () => {
-    init();
-    initStatueGroup();
-    animate();
+    console.log("All resources loaded");
+    checkIfReadyToStart();
+  };
+
+  loadingManager.onError = (error) => {
+    console.error("Loading error:", error);
   };
 
   // Load HDRI environment
   const hdriLoader = new RGBELoader(loadingManager);
-  hdriLoader.load("images/03.hdr", function (texture) {
-    envMap = texture;
-    envMap.mapping = THREE.EquirectangularReflectionMapping;
+  hdriLoader.load(
+    "images/03.hdr",
+    function (texture) {
+      envMap = texture;
+      envMap.mapping = THREE.EquirectangularReflectionMapping;
 
-    material = new THREE.MeshStandardMaterial({
-      color: 0x00000,
-      // wireframe: true,
-      roughness: 0.5,
-      transparent: true,
-      opacity: 1,
-    });
-  });
+      material = new THREE.MeshStandardMaterial({
+        color: 0x000000,
+        roughness: 0.5,
+        transparent: true,
+        opacity: 1,
+      });
+
+      isEnvironmentLoaded = true;
+      console.log("Environment loaded");
+      checkIfReadyToStart();
+    },
+    undefined,
+    (error) => {
+      console.error("HDRI loading error:", error);
+    }
+  );
 
   // Load model
   const loader = new GLTFLoader(loadingManager);
-  loader.load("mesh/man3.glb", (gltf) => {
-    camera = gltf.cameras[0];
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+  loader.load(
+    "mesh/man3.glb",
+    (gltf) => {
+      try {
+        // Safely set up camera
+        if (gltf.cameras && gltf.cameras[0]) {
+          camera = gltf.cameras[0];
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+        } else {
+          // Fallback camera if none in model
+          camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+          );
+          camera.position.set(0, 0, 5);
+        }
 
-    gltf.scene.traverse((child) => {
-      if (child.name.includes("statue_")) {
-        statuemesh = child;
-        statuemesh.material = material;
-      }
-      if (child.name.includes("line_") || child.name.includes("inside_")) {
-        child.visible = false;
-      }
-    });
+        // Safely traverse scene
+        gltf.scene.traverse((child) => {
+          if (!child || !child.name) return;
 
-    scene.add(gltf.scene);
-  });
+          try {
+            if (child.name.includes("statue_")) {
+              statuemesh = child;
+              if (material) {
+                statuemesh.material = material;
+              }
+            }
+            if (
+              child.name.includes("line_") ||
+              child.name.includes("inside_")
+            ) {
+              child.visible = false;
+            }
+          } catch (error) {
+            console.warn("Error processing child:", child.name, error);
+          }
+        });
+
+        scene.add(gltf.scene);
+        isModelLoaded = true;
+        console.log("Model loaded");
+        checkIfReadyToStart();
+      } catch (error) {
+        console.error("Error processing GLTF:", error);
+      }
+    },
+    undefined,
+    (error) => {
+      console.error("Model loading error:", error);
+    }
+  );
+
+  // Initialize basic renderer early
+  initRenderer();
 });
 
+function checkIfReadyToStart() {
+  if (isModelLoaded && isEnvironmentLoaded && !isSceneReady) {
+    console.log("Starting scene initialization");
+    isSceneReady = true;
+    init();
+    initStatueGroup();
+    animate();
+  }
+}
+
+function initRenderer() {
+  if (!renderer) {
+    renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      canvas: document.querySelector("#canvas"),
+    });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.5;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+  }
+}
+
 function onMouseMove(event) {
+  if (!isSceneReady) return;
+
   lastMouse.x = mouse.x;
   lastMouse.y = mouse.y;
 
@@ -169,8 +228,6 @@ function onMouseMove(event) {
 
   let deltaX = mouse.x - lastMouse.x;
   let deltaY = mouse.y - lastMouse.y;
-
-  console.log("Mouse Delta:", deltaX, deltaY);
 
   if (Math.abs(deltaX) > 0.004 || Math.abs(deltaY) > 0.004) {
     rotationOffset.x = Math.max(
@@ -192,53 +249,56 @@ function onMouseMove(event) {
 }
 
 function updateCursorLightPosition(event) {
-  if (!camera) return;
+  if (!camera || !isSceneReady) return;
 
-  const mouse3D = new THREE.Vector3(
-    (event.clientX / window.innerWidth) * 2 - 1,
-    -(event.clientY / window.innerHeight) * 2 + 1,
-    0.5
-  );
-
-  mouse3D.unproject(camera);
-  const direction = mouse3D.sub(camera.position).normalize();
-
-  if (cursorLightFar && config.cursorLightFar.enabled) {
-    const targetPositionFar = camera.position
-      .clone()
-      .add(direction.clone().multiplyScalar(config.cursorLightFar.depth));
-    // Apply X offset to the first far light
-    targetPositionFar.x += config.cursorLightFar.xOffset;
-    cursorLightFar.position.lerp(
-      targetPositionFar,
-      config.cursorLightFar.smoothing
+  try {
+    const mouse3D = new THREE.Vector3(
+      (event.clientX / window.innerWidth) * 2 - 1,
+      -(event.clientY / window.innerHeight) * 2 + 1,
+      0.5
     );
-  }
 
-  if (cursorLightFar2 && config.cursorLightFar.enabled) {
-    const targetPositionFar2 = camera.position
-      .clone()
-      .add(direction.clone().multiplyScalar(config.cursorLightFar.depth));
-    // Apply negative X offset to the second far light
-    targetPositionFar2.x -= config.cursorLightFar.xOffset;
-    cursorLightFar2.position.lerp(
-      targetPositionFar2,
-      config.cursorLightFar.smoothing
-    );
+    mouse3D.unproject(camera);
+    const direction = mouse3D.sub(camera.position).normalize();
+
+    if (cursorLightFar && config.cursorLightFar.enabled) {
+      const targetPositionFar = camera.position
+        .clone()
+        .add(direction.clone().multiplyScalar(config.cursorLightFar.depth));
+      targetPositionFar.x += config.cursorLightFar.xOffset;
+      cursorLightFar.position.lerp(
+        targetPositionFar,
+        config.cursorLightFar.smoothing
+      );
+    }
+
+    if (cursorLightFar2 && config.cursorLightFar.enabled) {
+      const targetPositionFar2 = camera.position
+        .clone()
+        .add(direction.clone().multiplyScalar(config.cursorLightFar.depth));
+      targetPositionFar2.x -= config.cursorLightFar.xOffset;
+      cursorLightFar2.position.lerp(
+        targetPositionFar2,
+        config.cursorLightFar.smoothing
+      );
+    }
+  } catch (error) {
+    console.warn("Error updating cursor light position:", error);
   }
 }
 
 function createCursorLights() {
-  // First far cursor light
-  cursorLightFar = new THREE.PointLight(
-    config.cursorLightFar.color,
-    config.cursorLightFar.intensity,
-    config.cursorLightFar.distance,
-    config.cursorLightFar.decay
-  );
+  if (!camera) return;
 
-  // Initialize far light behind the camera instead of in front
-  if (camera) {
+  try {
+    // First far cursor light
+    cursorLightFar = new THREE.PointLight(
+      config.cursorLightFar.color,
+      config.cursorLightFar.intensity,
+      config.cursorLightFar.distance,
+      config.cursorLightFar.decay
+    );
+
     // Get camera's forward direction
     const cameraForward = new THREE.Vector3(0, 0, -1);
     cameraForward.transformDirection(camera.matrixWorld);
@@ -249,185 +309,171 @@ function createCursorLights() {
       .add(cameraForward.clone().multiplyScalar(-config.cursorLightFar.depth));
     initialPosition.x += config.cursorLightFar.xOffset;
     cursorLightFar.position.copy(initialPosition);
-  } else {
-    // Fallback if camera isn't ready yet - position behind origin with X offset
-    cursorLightFar.position.set(
-      config.cursorLightFar.xOffset,
-      0,
-      -config.cursorLightFar.depth
+
+    scene.add(cursorLightFar);
+
+    // Second far cursor light
+    cursorLightFar2 = new THREE.PointLight(
+      config.cursorLightFar.color,
+      config.cursorLightFar.intensity,
+      config.cursorLightFar.distance,
+      config.cursorLightFar.decay
     );
-  }
 
-  scene.add(cursorLightFar);
-
-  // Second far cursor light (duplicate)
-  cursorLightFar2 = new THREE.PointLight(
-    config.cursorLightFar.color,
-    config.cursorLightFar.intensity,
-    config.cursorLightFar.distance,
-    config.cursorLightFar.decay
-  );
-
-  // Initialize second far light behind the camera with negative X offset
-  if (camera) {
-    // Get camera's forward direction
-    const cameraForward = new THREE.Vector3(0, 0, -1);
-    cameraForward.transformDirection(camera.matrixWorld);
-
-    // Position behind the camera with negative X offset
     const initialPosition2 = camera.position
       .clone()
       .add(cameraForward.clone().multiplyScalar(-config.cursorLightFar.depth));
     initialPosition2.x -= config.cursorLightFar.xOffset;
     cursorLightFar2.position.copy(initialPosition2);
-  } else {
-    // Fallback if camera isn't ready yet - position behind origin with negative X offset
-    cursorLightFar2.position.set(
-      -config.cursorLightFar.xOffset,
-      0,
-      -config.cursorLightFar.depth
-    );
+
+    scene.add(cursorLightFar2);
+
+    // Create helpers (commented out)
+    // cursorLightFarHelper = new THREE.PointLightHelper(cursorLightFar, 0.5);
+    // cursorLightFarHelper2 = new THREE.PointLightHelper(cursorLightFar2, 0.5);
+  } catch (error) {
+    console.error("Error creating cursor lights:", error);
   }
-
-  scene.add(cursorLightFar2);
-
-  // Create helpers for both far lights
-  cursorLightFarHelper = new THREE.PointLightHelper(cursorLightFar, 0.5);
-  // scene.add(cursorLightFarHelper);
-
-  cursorLightFarHelper2 = new THREE.PointLightHelper(cursorLightFar2, 0.5);
-  // scene.add(cursorLightFarHelper2);
 }
 
 function initStatueGroup() {
-  statueGroup = new THREE.Group();
-  const objectsToGroup = [];
+  if (!isSceneReady) return;
 
-  scene.traverse((child) => {
-    if (
-      child.name &&
-      (child.name.includes("statue_") || child.name.includes("_part"))
-    ) {
-      objectsToGroup.push(child);
-    }
-  });
+  try {
+    statueGroup = new THREE.Group();
+    const objectsToGroup = [];
 
-  objectsToGroup.forEach((child) => {
-    const worldPosition = new THREE.Vector3();
-    const worldQuaternion = new THREE.Quaternion();
-    const worldScale = new THREE.Vector3();
+    scene.traverse((child) => {
+      if (
+        child &&
+        child.name &&
+        (child.name.includes("statue_") || child.name.includes("_part"))
+      ) {
+        objectsToGroup.push(child);
+      }
+    });
 
-    child.getWorldPosition(worldPosition);
-    child.getWorldQuaternion(worldQuaternion);
-    child.getWorldScale(worldScale);
+    objectsToGroup.forEach((child) => {
+      try {
+        const worldPosition = new THREE.Vector3();
+        const worldQuaternion = new THREE.Quaternion();
+        const worldScale = new THREE.Vector3();
 
-    if (child.parent) child.parent.remove(child);
-    else scene.remove(child);
+        child.getWorldPosition(worldPosition);
+        child.getWorldQuaternion(worldQuaternion);
+        child.getWorldScale(worldScale);
 
-    statueGroup.add(child);
+        if (child.parent) child.parent.remove(child);
+        else scene.remove(child);
 
-    child.position.copy(worldPosition);
-    child.quaternion.copy(worldQuaternion);
-    child.scale.copy(worldScale);
-  });
+        statueGroup.add(child);
 
-  scene.add(statueGroup);
+        child.position.copy(worldPosition);
+        child.quaternion.copy(worldQuaternion);
+        child.scale.copy(worldScale);
+      } catch (error) {
+        console.warn("Error processing statue group child:", error);
+      }
+    });
 
-  statueGroup.userData.originalPosition = statueGroup.position.clone();
-  statueGroup.userData.originalRotation = new THREE.Vector3(
-    statueGroup.rotation.x,
-    statueGroup.rotation.y,
-    statueGroup.rotation.z
-  );
+    scene.add(statueGroup);
 
-  mouse.set(0, 0);
-  lastMouse.set(0, 0);
-  rotationOffset.set(0, 0);
+    statueGroup.userData.originalPosition = statueGroup.position.clone();
+    statueGroup.userData.originalRotation = new THREE.Vector3(
+      statueGroup.rotation.x,
+      statueGroup.rotation.y,
+      statueGroup.rotation.z
+    );
 
-  window.addEventListener("mousemove", onMouseMove);
+    mouse.set(0, 0);
+    lastMouse.set(0, 0);
+    rotationOffset.set(0, 0);
+
+    window.addEventListener("mousemove", onMouseMove);
+  } catch (error) {
+    console.error("Error initializing statue group:", error);
+  }
 }
 
 function init() {
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    canvas: document.querySelector("#canvas"),
-  });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.5;
-  renderer.outputEncoding = THREE.sRGBEncoding;
+  if (!camera) return;
 
-  composer = new EffectComposer(renderer);
-  const renderPass = new RenderPass(scene, camera);
+  try {
+    composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera);
 
-  bokehPass = new BokehPass(scene, camera, {
-    focus: config.dof.focus,
-    aperture: config.dof.aperture,
-    maxblur: config.dof.maxblur,
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-  bokehPass.enabled = config.dof.enabled;
+    bokehPass = new BokehPass(scene, camera, {
+      focus: config.dof.focus,
+      aperture: config.dof.aperture,
+      maxblur: config.dof.maxblur,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    });
+    bokehPass.enabled = config.dof.enabled;
 
-  bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    config.bloom.strength,
-    config.bloom.radius,
-    config.bloom.threshold
-  );
+    bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      config.bloom.strength,
+      config.bloom.radius,
+      config.bloom.threshold
+    );
 
-  const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
+    const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
 
-  const brightnessCompensationPass = new ShaderPass({
-    uniforms: { tDiffuse: { value: null }, brightness: { value: 1.5 } },
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform sampler2D tDiffuse;
-      uniform float brightness;
-      varying vec2 vUv;
-      void main() {
-        vec4 color = texture2D(tDiffuse, vUv);
-        gl_FragColor = vec4(color.rgb * brightness, color.a);
-      }
-    `,
-  });
+    const brightnessCompensationPass = new ShaderPass({
+      uniforms: { tDiffuse: { value: null }, brightness: { value: 1.5 } },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float brightness;
+        varying vec2 vUv;
+        void main() {
+          vec4 color = texture2D(tDiffuse, vUv);
+          gl_FragColor = vec4(color.rgb * brightness, color.a);
+        }
+      `,
+    });
 
-  composer.addPass(renderPass);
-  composer.addPass(bokehPass);
-  composer.addPass(bloomPass);
-  composer.addPass(brightnessCompensationPass);
-  composer.addPass(gammaCorrectionPass);
+    composer.addPass(renderPass);
+    composer.addPass(bokehPass);
+    composer.addPass(bloomPass);
+    composer.addPass(brightnessCompensationPass);
+    composer.addPass(gammaCorrectionPass);
 
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = config.orbitControls.enableDamping;
-  controls.dampingFactor = config.orbitControls.dampingFactor;
-  controls.enabled = config.orbitControls.enabled;
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = config.orbitControls.enableDamping;
+    controls.dampingFactor = config.orbitControls.dampingFactor;
+    controls.enabled = config.orbitControls.enabled;
 
-  window.addEventListener("resize", onWindowResize);
+    window.addEventListener("resize", onWindowResize);
 
-  if (camera) camera.userData.defaultPosition = camera.position.clone();
+    if (camera) camera.userData.defaultPosition = camera.position.clone();
 
-  createCursorLights();
-  // initGUI();
-  // dustParticles = new useDustParticles(scene, config.dustParticles);
+    createCursorLights();
+    // initGUI();
+    // dustParticles = new useDustParticles(scene, config.dustParticles);
+  } catch (error) {
+    console.error("Error in init:", error);
+  }
 }
 
 function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
+  if (!camera || !renderer || !composer) return;
 
-  if (bokehPass) {
+  try {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+
     if (
+      bokehPass &&
       bokehPass.renderTargetDepth &&
       typeof bokehPass.renderTargetDepth.setSize === "function"
     ) {
@@ -436,68 +482,98 @@ function onWindowResize() {
         window.innerHeight
       );
     }
-  }
 
-  if (dustParticles) {
-    const aspectRatio = window.innerWidth / window.innerHeight;
-    dustParticles.updateSettings({
-      area: { width: 15 * aspectRatio, height: 15, depth: 15 * aspectRatio },
-    });
+    if (dustParticles) {
+      const aspectRatio = window.innerWidth / window.innerHeight;
+      dustParticles.updateSettings({
+        area: { width: 15 * aspectRatio, height: 15, depth: 15 * aspectRatio },
+      });
+    }
+  } catch (error) {
+    console.warn("Error in window resize:", error);
   }
 }
 
 function animate() {
-  const delta = clock.getDelta();
-  requestAnimationFrame(animate);
-
-  if (!isMouseMoving) {
-    rotationOffset.x += (0 - rotationOffset.x) * returnFactor.value;
-    rotationOffset.y += (0 - rotationOffset.y) * returnFactor.value;
+  if (!isSceneReady) {
+    requestAnimationFrame(animate);
+    return;
   }
 
-  if (statueGroup) {
-    statueGroup.rotation.x =
-      statueGroup.userData.originalRotation.x + rotationOffset.x;
-    statueGroup.rotation.y =
-      statueGroup.userData.originalRotation.y + rotationOffset.y;
-  }
+  try {
+    const delta = clock.getDelta();
+    requestAnimationFrame(animate);
 
-  if (controls.enabled) controls.update();
-  if (dustParticles) dustParticles.animate(delta);
+    if (!isMouseMoving) {
+      rotationOffset.x += (0 - rotationOffset.x) * returnFactor.value;
+      rotationOffset.y += (0 - rotationOffset.y) * returnFactor.value;
+    }
 
-  // Update light helpers to follow their respective lights
-  if (cursorLightFarHelper && cursorLightFar) {
-    cursorLightFarHelper.update();
-  }
-  if (cursorLightFarHelper2 && cursorLightFar2) {
-    cursorLightFarHelper2.update();
-  }
+    if (statueGroup && statueGroup.userData.originalRotation) {
+      statueGroup.rotation.x =
+        statueGroup.userData.originalRotation.x + rotationOffset.x;
+      statueGroup.rotation.y =
+        statueGroup.userData.originalRotation.y + rotationOffset.y;
+    }
 
-  composer.render();
+    if (controls && controls.enabled) controls.update();
+    if (dustParticles) dustParticles.animate(delta);
+
+    // Update light helpers if they exist
+    if (cursorLightFarHelper && cursorLightFar) {
+      cursorLightFarHelper.update();
+    }
+    if (cursorLightFarHelper2 && cursorLightFar2) {
+      cursorLightFarHelper2.update();
+    }
+
+    if (composer) {
+      composer.render();
+    }
+  } catch (error) {
+    console.warn("Error in animate:", error);
+    requestAnimationFrame(animate);
+  }
 }
 
 function initGUI() {
-  const { $dat } = useNuxtApp();
-  const gui = new $dat.GUI({ width: 200 });
+  try {
+    const { $dat } = useNuxtApp();
+    const gui = new $dat.GUI({ width: 200 });
 
-  // Add far light color control
-  const farLightColorControl = {
-    color: config.cursorLightFar.color,
-  };
+    const farLightColorControl = {
+      color: config.cursorLightFar.color,
+    };
 
-  gui
-    .addColor(farLightColorControl, "color")
-    .name("Far Light Color")
-    .onChange((value) => {
-      if (cursorLightFar) {
-        cursorLightFar.color.setHex(value);
-        config.cursorLightFar.color = value;
-      }
-      if (cursorLightFar2) {
-        cursorLightFar2.color.setHex(value);
-      }
-    });
+    gui
+      .addColor(farLightColorControl, "color")
+      .name("Far Light Color")
+      .onChange((value) => {
+        if (cursorLightFar) {
+          cursorLightFar.color.setHex(value);
+          config.cursorLightFar.color = value;
+        }
+        if (cursorLightFar2) {
+          cursorLightFar2.color.setHex(value);
+        }
+      });
+  } catch (error) {
+    console.warn("Error initializing GUI:", error);
+  }
 }
+
+// Cleanup on unmount
+onUnmounted(() => {
+  window.removeEventListener("mousemove", onMouseMove);
+  window.removeEventListener("resize", onWindowResize);
+
+  if (renderer) {
+    renderer.dispose();
+  }
+  if (composer) {
+    composer.dispose();
+  }
+});
 </script>
 
 <style lang="scss" scoped>

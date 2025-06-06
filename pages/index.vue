@@ -95,7 +95,32 @@ scene.background = new THREE.Color(0x000000);
 const loadingManager = new THREE.LoadingManager();
 
 onMounted(() => {
-  // Loading manager - wait for ALL resources to load
+  setTimeout(() => {
+    gsap.registerPlugin(SplitText);
+
+    let split = SplitText.create(".split", {
+      type: "lines, words",
+      mask: "lines",
+      linesClass: "lines",
+    });
+
+    gsap.set(split.lines, {
+      yPercent: 100,
+    });
+
+    setTimeout(() => {
+      gsap.set(".split", {
+        opacity: 1,
+        ease: "power2.out",
+      });
+      gsap.to(split.lines, {
+        yPercent: 0,
+        ease: "power2.out",
+        duration: 1.5,
+        stagger: 0.2,
+      });
+    }, 500);
+  }, 500);
   loadingManager.onLoad = () => {
     console.log("All resources loaded");
     checkIfReadyToStart();

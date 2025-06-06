@@ -172,23 +172,23 @@ function onMouseMove(event) {
 
   console.log("Mouse Delta:", deltaX, deltaY);
 
-  // if (Math.abs(deltaX) > 0.004 || Math.abs(deltaY) > 0.004) {
-  // rotationOffset.x = Math.max(
-  //   -0.5,
-  //   Math.min(0.5, rotationOffset.x - deltaY * mouseMoveFactor.value)
-  // );
-  // rotationOffset.y = Math.max(
-  //   -0.5,
-  //   Math.min(0.5, rotationOffset.y - deltaX * mouseMoveFactor.value)
-  // );
-  // clearTimeout(mouseTimeout);
-  // isMouseMoving = true;
-  // mouseTimeout = setTimeout(() => {
-  //   isMouseMoving = false;
-  // }, 100);
-  // }
+  if (Math.abs(deltaX) > 0.004 || Math.abs(deltaY) > 0.004) {
+    rotationOffset.x = Math.max(
+      -0.5,
+      Math.min(0.5, rotationOffset.x - deltaY * mouseMoveFactor.value)
+    );
+    rotationOffset.y = Math.max(
+      -0.5,
+      Math.min(0.5, rotationOffset.y - deltaX * mouseMoveFactor.value)
+    );
+    clearTimeout(mouseTimeout);
+    isMouseMoving = true;
+    mouseTimeout = setTimeout(() => {
+      isMouseMoving = false;
+    }, 100);
+  }
 
-  updateCursorLightPosition(event);
+  // updateCursorLightPosition(event);
 }
 
 function updateCursorLightPosition(event) {

@@ -34,7 +34,6 @@ let cursorLightFarHelper, cursorLightFarHelper2;
 // State tracking
 let isSceneReady = false;
 let isModelLoaded = false;
-let isEnvironmentLoaded = false;
 
 // Mouse rotation variables
 let mouse = new THREE.Vector2();
@@ -131,30 +130,6 @@ onMounted(() => {
     console.error("Loading error:", error);
   };
 
-  // Load HDRI environment
-  const hdriLoader = new RGBELoader(loadingManager);
-  hdriLoader.load(
-    "images/03.hdr",
-    function (texture) {
-      envMap = texture;
-      envMap.mapping = THREE.EquirectangularReflectionMapping;
-
-      material = new THREE.MeshStandardMaterial({
-        color: 0x000000,
-        roughness: 0.5,
-        transparent: true,
-        opacity: 1,
-      });
-
-      isEnvironmentLoaded = true;
-      console.log("Environment loaded");
-    },
-    undefined,
-    (error) => {
-      console.error("HDRI loading error:", error);
-    }
-  );
-
   // Load model
   const loader = new GLTFLoader(loadingManager);
   loader.load(
@@ -185,7 +160,7 @@ onMounted(() => {
             if (child.name.includes("statue_")) {
               statuemesh = child;
               if (material) {
-                statuemesh.material = material;
+                // statuemesh.material = material;
               }
             }
             if (
@@ -218,7 +193,7 @@ onMounted(() => {
 });
 
 function checkIfReadyToStart() {
-  if (isModelLoaded && isEnvironmentLoaded && !isSceneReady) {
+  if (isModelLoaded && !isSceneReady) {
     console.log("Starting scene initialization");
     isSceneReady = true;
     init();

@@ -457,7 +457,7 @@ function init() {
 
     createCursorLights();
     // initGUI();
-    // dustParticles = new useDustParticles(scene, config.dustParticles);
+    dustParticles = new useDustParticles(scene, config.dustParticles);
   } catch (error) {
     console.error("Error in init:", error);
   }

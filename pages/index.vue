@@ -12,7 +12,6 @@
 
 <script setup>
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -24,12 +23,11 @@ import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectio
 import gsap from "gsap";
 
 // Global variables
-let scene, renderer, camera, controls, statuemesh, envMap, material;
+let scene, renderer, camera, statuemesh, envMap, material;
 let composer, bloomPass, bokehPass;
 let dustParticles;
 let clock = new THREE.Clock();
 let cursorLightFar, cursorLightFar2;
-let cursorLightFarHelper, cursorLightFarHelper2;
 
 // State tracking
 let isSceneReady = false;
@@ -66,10 +64,6 @@ const config = {
   },
 
   // Other settings
-  lineWidth: 6,
-  opacity: 1,
-  bezierCurveAmount: 0.5,
-  orbitControls: { enabled: false, enableDamping: true, dampingFactor: 0.1 },
   dustParticles: {
     count: 2000,
     size: { min: 0.008, max: 0.06 },
@@ -83,8 +77,6 @@ const config = {
     },
   },
   dof: { focus: 2.5, aperture: 0.001, maxblur: 0.5, enabled: false },
-  insideLineWidth: 0.7,
-  insideLineOpacity: 1,
 };
 
 // Create scene
@@ -121,13 +113,10 @@ onMounted(() => {
     }, 500);
   }, 500);
   loadingManager.onLoad = () => {
-    setTimeout(() => {
-      checkIfReadyToStart();
-    }, 500);
-  };
-
-  loadingManager.onError = (error) => {
-    console.error("Loading error:", error);
+    isSceneReady = true;
+    init();
+    initStatueGroup();
+    animate();
   };
 
   // Load model
@@ -135,52 +124,43 @@ onMounted(() => {
   loader.load(
     "mesh/man3.glb",
     (gltf) => {
-      try {
-        // Safely set up camera
-        if (gltf.cameras && gltf.cameras[0]) {
-          camera = gltf.cameras[0];
-          camera.aspect = window.innerWidth / window.innerHeight;
-          camera.updateProjectionMatrix();
-        } else {
-          // Fallback camera if none in model
-          camera = new THREE.PerspectiveCamera(
-            75,
-            window.innerWidth / window.innerHeight,
-            0.1,
-            1000
-          );
-          camera.position.set(0, 0, 5);
-        }
-
-        // Safely traverse scene
-        gltf.scene.traverse((child) => {
-          if (!child || !child.name) return;
-
-          try {
-            if (child.name.includes("statue_")) {
-              statuemesh = child;
-              if (material) {
-                // statuemesh.material = material;
-              }
-            }
-            if (
-              child.name.includes("line_") ||
-              child.name.includes("inside_")
-            ) {
-              child.visible = false;
-            }
-          } catch (error) {
-            console.warn("Error processing child:", child.name, error);
-          }
-        });
-
-        scene.add(gltf.scene);
-        isModelLoaded = true;
-        console.log("Model loaded");
-        checkIfReadyToStart();
-      } catch (error) {
-        console.error("Error processing GLTF:", error);
+      // Safely set up camera
+      if (gltf.cameras && gltf.cameras[0]) {
+        camera = gltf.cameras[0];
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      } else {
+        // Fallback camera if none in model
+        camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+        camera.position.set(0, 0, 5);
       }
+
+      // Safely traverse scene
+      gltf.scene.traverse((child) => {
+        if (!child || !child.name) return;
+
+        try {
+          if (child.name.includes("statue_")) {
+            statuemesh = child;
+            if (material) {
+              // statuemesh.material = material;
+            }
+          }
+          if (child.name.includes("line_") || child.name.includes("inside_")) {
+            child.visible = false;
+          }
+        } catch (error) {
+          console.warn("Error processing child:", child.name, error);
+        }
+      });
+
+      scene.add(gltf.scene);
+      isModelLoaded = true;
     },
     undefined,
     (error) => {
@@ -191,16 +171,6 @@ onMounted(() => {
   // Initialize basic renderer early
   initRenderer();
 });
-
-function checkIfReadyToStart() {
-  if (isModelLoaded && !isSceneReady) {
-    console.log("Starting scene initialization");
-    isSceneReady = true;
-    init();
-    initStatueGroup();
-    animate();
-  }
-}
 
 function initRenderer() {
   if (!renderer) {
@@ -249,187 +219,157 @@ function onMouseMove(event) {
 }
 
 function updateCursorLightPosition(event) {
-  if (!camera || !isSceneReady) return;
+  const mouse3D = new THREE.Vector3(
+    (event.clientX / window.innerWidth) * 2 - 1,
+    -(event.clientY / window.innerHeight) * 2 + 1,
+    0.5
+  );
 
-  try {
-    const mouse3D = new THREE.Vector3(
-      (event.clientX / window.innerWidth) * 2 - 1,
-      -(event.clientY / window.innerHeight) * 2 + 1,
-      0.5
+  mouse3D.unproject(camera);
+  const direction = mouse3D.sub(camera.position).normalize();
+
+  if (cursorLightFar && config.cursorLightFar.enabled) {
+    const targetPositionFar = camera.position
+      .clone()
+      .add(direction.clone().multiplyScalar(config.cursorLightFar.depth));
+    targetPositionFar.x += config.cursorLightFar.xOffset;
+    cursorLightFar.position.lerp(
+      targetPositionFar,
+      config.cursorLightFar.smoothing
     );
+  }
 
-    mouse3D.unproject(camera);
-    const direction = mouse3D.sub(camera.position).normalize();
-
-    if (cursorLightFar && config.cursorLightFar.enabled) {
-      const targetPositionFar = camera.position
-        .clone()
-        .add(direction.clone().multiplyScalar(config.cursorLightFar.depth));
-      targetPositionFar.x += config.cursorLightFar.xOffset;
-      cursorLightFar.position.lerp(
-        targetPositionFar,
-        config.cursorLightFar.smoothing
-      );
-    }
-
-    if (cursorLightFar2 && config.cursorLightFar.enabled) {
-      const targetPositionFar2 = camera.position
-        .clone()
-        .add(direction.clone().multiplyScalar(config.cursorLightFar.depth));
-      targetPositionFar2.x -= config.cursorLightFar.xOffset;
-      cursorLightFar2.position.lerp(
-        targetPositionFar2,
-        config.cursorLightFar.smoothing
-      );
-    }
-  } catch (error) {
-    console.warn("Error updating cursor light position:", error);
+  if (cursorLightFar2 && config.cursorLightFar.enabled) {
+    const targetPositionFar2 = camera.position
+      .clone()
+      .add(direction.clone().multiplyScalar(config.cursorLightFar.depth));
+    targetPositionFar2.x -= config.cursorLightFar.xOffset;
+    cursorLightFar2.position.lerp(
+      targetPositionFar2,
+      config.cursorLightFar.smoothing
+    );
   }
 }
 
 function createCursorLights() {
-  if (!camera) return;
+  cursorLightFar = new THREE.PointLight(
+    config.cursorLightFar.color,
+    config.cursorLightFar.intensity,
+    config.cursorLightFar.distance,
+    config.cursorLightFar.decay
+  );
 
-  try {
-    // First far cursor light
-    cursorLightFar = new THREE.PointLight(
-      config.cursorLightFar.color,
-      config.cursorLightFar.intensity,
-      config.cursorLightFar.distance,
-      config.cursorLightFar.decay
-    );
+  // Get camera's forward direction
+  const cameraForward = new THREE.Vector3(0, 0, 1);
+  cameraForward.transformDirection(camera.matrixWorld);
 
-    // Get camera's forward direction
-    const cameraForward = new THREE.Vector3(0, 0, 1);
-    cameraForward.transformDirection(camera.matrixWorld);
+  // Position behind the camera with X offset
+  const initialPosition = camera.position
+    .clone()
+    .add(cameraForward.clone().multiplyScalar(-config.cursorLightFar.depth));
+  initialPosition.x += config.cursorLightFar.xOffset;
+  cursorLightFar.position.copy(initialPosition);
 
-    // Position behind the camera with X offset
-    const initialPosition = camera.position
-      .clone()
-      .add(cameraForward.clone().multiplyScalar(-config.cursorLightFar.depth));
-    initialPosition.x += config.cursorLightFar.xOffset;
-    cursorLightFar.position.copy(initialPosition);
+  scene.add(cursorLightFar);
 
-    scene.add(cursorLightFar);
+  // Second far cursor light
+  cursorLightFar2 = new THREE.PointLight(
+    config.cursorLightFar.color,
+    config.cursorLightFar.intensity,
+    config.cursorLightFar.distance,
+    config.cursorLightFar.decay
+  );
 
-    // Second far cursor light
-    cursorLightFar2 = new THREE.PointLight(
-      config.cursorLightFar.color,
-      config.cursorLightFar.intensity,
-      config.cursorLightFar.distance,
-      config.cursorLightFar.decay
-    );
+  const initialPosition2 = camera.position
+    .clone()
+    .add(cameraForward.clone().multiplyScalar(-config.cursorLightFar.depth));
+  initialPosition2.x -= config.cursorLightFar.xOffset;
+  cursorLightFar2.position.copy(initialPosition2);
 
-    const initialPosition2 = camera.position
-      .clone()
-      .add(cameraForward.clone().multiplyScalar(-config.cursorLightFar.depth));
-    initialPosition2.x -= config.cursorLightFar.xOffset;
-    cursorLightFar2.position.copy(initialPosition2);
-
-    scene.add(cursorLightFar2);
-
-    // Create helpers (commented out)
-    // cursorLightFarHelper = new THREE.PointLightHelper(cursorLightFar, 0.5);
-    // cursorLightFarHelper2 = new THREE.PointLightHelper(cursorLightFar2, 0.5);
-  } catch (error) {
-    console.error("Error creating cursor lights:", error);
-  }
+  scene.add(cursorLightFar2);
 }
 
 function initStatueGroup() {
-  if (!isSceneReady) return;
+  statueGroup = new THREE.Group();
+  const objectsToGroup = [];
 
-  try {
-    statueGroup = new THREE.Group();
-    const objectsToGroup = [];
+  scene.traverse((child) => {
+    if (
+      child &&
+      child.name &&
+      (child.name.includes("statue_") || child.name.includes("_part"))
+    ) {
+      objectsToGroup.push(child);
+    }
+  });
 
-    scene.traverse((child) => {
-      if (
-        child &&
-        child.name &&
-        (child.name.includes("statue_") || child.name.includes("_part"))
-      ) {
-        objectsToGroup.push(child);
-      }
-    });
+  objectsToGroup.forEach((child) => {
+    const worldPosition = new THREE.Vector3();
+    const worldQuaternion = new THREE.Quaternion();
+    const worldScale = new THREE.Vector3();
 
-    objectsToGroup.forEach((child) => {
-      try {
-        const worldPosition = new THREE.Vector3();
-        const worldQuaternion = new THREE.Quaternion();
-        const worldScale = new THREE.Vector3();
+    child.getWorldPosition(worldPosition);
+    child.getWorldQuaternion(worldQuaternion);
+    child.getWorldScale(worldScale);
 
-        child.getWorldPosition(worldPosition);
-        child.getWorldQuaternion(worldQuaternion);
-        child.getWorldScale(worldScale);
+    if (child.parent) child.parent.remove(child);
+    else scene.remove(child);
 
-        if (child.parent) child.parent.remove(child);
-        else scene.remove(child);
+    statueGroup.add(child);
 
-        statueGroup.add(child);
+    child.position.copy(worldPosition);
+    child.quaternion.copy(worldQuaternion);
+    child.scale.copy(worldScale);
+  });
 
-        child.position.copy(worldPosition);
-        child.quaternion.copy(worldQuaternion);
-        child.scale.copy(worldScale);
-      } catch (error) {
-        console.warn("Error processing statue group child:", error);
-      }
-    });
+  scene.add(statueGroup);
 
-    scene.add(statueGroup);
+  statueGroup.userData.originalPosition = statueGroup.position.clone();
+  statueGroup.userData.originalRotation = new THREE.Vector3(
+    statueGroup.rotation.x,
+    statueGroup.rotation.y,
+    statueGroup.rotation.z
+  );
 
-    statueGroup.userData.originalPosition = statueGroup.position.clone();
-    statueGroup.userData.originalRotation = new THREE.Vector3(
-      statueGroup.rotation.x,
-      statueGroup.rotation.y,
-      statueGroup.rotation.z
-    );
+  mouse.set(0, 0);
+  lastMouse.set(0, 0);
+  rotationOffset.set(0, 0);
 
-    mouse.set(0, 0);
-    lastMouse.set(0, 0);
-    rotationOffset.set(0, 0);
-
-    window.addEventListener("mousemove", onMouseMove);
-  } catch (error) {
-    console.error("Error initializing statue group:", error);
-  }
+  window.addEventListener("mousemove", onMouseMove);
 }
 
 function init() {
-  if (!camera) return;
+  composer = new EffectComposer(renderer);
+  const renderPass = new RenderPass(scene, camera);
 
-  try {
-    composer = new EffectComposer(renderer);
-    const renderPass = new RenderPass(scene, camera);
+  bokehPass = new BokehPass(scene, camera, {
+    focus: config.dof.focus,
+    aperture: config.dof.aperture,
+    maxblur: config.dof.maxblur,
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+  bokehPass.enabled = config.dof.enabled;
 
-    bokehPass = new BokehPass(scene, camera, {
-      focus: config.dof.focus,
-      aperture: config.dof.aperture,
-      maxblur: config.dof.maxblur,
-      width: window.innerWidth,
-      height: window.innerHeight,
-    });
-    bokehPass.enabled = config.dof.enabled;
+  bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    config.bloom.strength,
+    config.bloom.radius,
+    config.bloom.threshold
+  );
 
-    bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
-      config.bloom.strength,
-      config.bloom.radius,
-      config.bloom.threshold
-    );
+  const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
 
-    const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
-
-    const brightnessCompensationPass = new ShaderPass({
-      uniforms: { tDiffuse: { value: null }, brightness: { value: 1.5 } },
-      vertexShader: `
+  const brightnessCompensationPass = new ShaderPass({
+    uniforms: { tDiffuse: { value: null }, brightness: { value: 1.5 } },
+    vertexShader: `
         varying vec2 vUv;
         void main() {
           vUv = uv;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
-      fragmentShader: `
+    fragmentShader: `
         uniform sampler2D tDiffuse;
         uniform float brightness;
         varying vec2 vUv;
@@ -438,59 +378,43 @@ function init() {
           gl_FragColor = vec4(color.rgb * brightness, color.a);
         }
       `,
-    });
+  });
 
-    composer.addPass(renderPass);
-    composer.addPass(bokehPass);
-    composer.addPass(bloomPass);
-    composer.addPass(brightnessCompensationPass);
-    composer.addPass(gammaCorrectionPass);
+  composer.addPass(renderPass);
+  composer.addPass(bokehPass);
+  composer.addPass(bloomPass);
+  composer.addPass(brightnessCompensationPass);
+  composer.addPass(gammaCorrectionPass);
 
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = config.orbitControls.enableDamping;
-    controls.dampingFactor = config.orbitControls.dampingFactor;
-    controls.enabled = config.orbitControls.enabled;
+  window.addEventListener("resize", onWindowResize);
 
-    window.addEventListener("resize", onWindowResize);
+  if (camera) camera.userData.defaultPosition = camera.position.clone();
 
-    if (camera) camera.userData.defaultPosition = camera.position.clone();
-
-    createCursorLights();
-    // initGUI();
-    dustParticles = new useDustParticles(scene, config.dustParticles);
-  } catch (error) {
-    console.error("Error in init:", error);
-  }
+  createCursorLights();
+  dustParticles = new useDustParticles(scene, config.dustParticles);
 }
 
 function onWindowResize() {
   if (!camera || !renderer || !composer) return;
 
-  try {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
 
-    if (
-      bokehPass &&
-      bokehPass.renderTargetDepth &&
-      typeof bokehPass.renderTargetDepth.setSize === "function"
-    ) {
-      bokehPass.renderTargetDepth.setSize(
-        window.innerWidth,
-        window.innerHeight
-      );
-    }
+  if (
+    bokehPass &&
+    bokehPass.renderTargetDepth &&
+    typeof bokehPass.renderTargetDepth.setSize === "function"
+  ) {
+    bokehPass.renderTargetDepth.setSize(window.innerWidth, window.innerHeight);
+  }
 
-    if (dustParticles) {
-      const aspectRatio = window.innerWidth / window.innerHeight;
-      dustParticles.updateSettings({
-        area: { width: 15 * aspectRatio, height: 15, depth: 15 * aspectRatio },
-      });
-    }
-  } catch (error) {
-    console.warn("Error in window resize:", error);
+  if (dustParticles) {
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    dustParticles.updateSettings({
+      area: { width: 15 * aspectRatio, height: 15, depth: 15 * aspectRatio },
+    });
   }
 }
 
@@ -500,80 +424,27 @@ function animate() {
     return;
   }
 
-  try {
-    const delta = clock.getDelta();
-    requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  requestAnimationFrame(animate);
 
-    if (!isMouseMoving) {
-      rotationOffset.x += (0 - rotationOffset.x) * returnFactor.value;
-      rotationOffset.y += (0 - rotationOffset.y) * returnFactor.value;
-    }
-
-    if (statueGroup && statueGroup.userData.originalRotation) {
-      statueGroup.rotation.x =
-        statueGroup.userData.originalRotation.x + rotationOffset.x;
-      statueGroup.rotation.y =
-        statueGroup.userData.originalRotation.y + rotationOffset.y;
-    }
-
-    if (controls && controls.enabled) controls.update();
-    if (dustParticles) dustParticles.animate(delta);
-
-    // Update light helpers if they exist
-    if (cursorLightFarHelper && cursorLightFar) {
-      cursorLightFarHelper.update();
-    }
-    if (cursorLightFarHelper2 && cursorLightFar2) {
-      cursorLightFarHelper2.update();
-    }
-
-    if (composer) {
-      composer.render();
-    }
-  } catch (error) {
-    console.warn("Error in animate:", error);
-    requestAnimationFrame(animate);
+  if (!isMouseMoving) {
+    rotationOffset.x += (0 - rotationOffset.x) * returnFactor.value;
+    rotationOffset.y += (0 - rotationOffset.y) * returnFactor.value;
   }
-}
 
-function initGUI() {
-  try {
-    const { $dat } = useNuxtApp();
-    const gui = new $dat.GUI({ width: 200 });
-
-    const farLightColorControl = {
-      color: config.cursorLightFar.color,
-    };
-
-    gui
-      .addColor(farLightColorControl, "color")
-      .name("Far Light Color")
-      .onChange((value) => {
-        if (cursorLightFar) {
-          cursorLightFar.color.setHex(value);
-          config.cursorLightFar.color = value;
-        }
-        if (cursorLightFar2) {
-          cursorLightFar2.color.setHex(value);
-        }
-      });
-  } catch (error) {
-    console.warn("Error initializing GUI:", error);
+  if (statueGroup && statueGroup.userData.originalRotation) {
+    statueGroup.rotation.x =
+      statueGroup.userData.originalRotation.x + rotationOffset.x;
+    statueGroup.rotation.y =
+      statueGroup.userData.originalRotation.y + rotationOffset.y;
   }
-}
 
-// Cleanup on unmount
-onUnmounted(() => {
-  window.removeEventListener("mousemove", onMouseMove);
-  window.removeEventListener("resize", onWindowResize);
+  if (dustParticles) dustParticles.animate(delta);
 
-  if (renderer) {
-    renderer.dispose();
-  }
   if (composer) {
-    composer.dispose();
+    composer.render();
   }
-});
+}
 </script>
 
 <style lang="scss" scoped>

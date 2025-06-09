@@ -41,12 +41,9 @@ export const useDustParticles = class DustParticles {
   // Method to set cursor light reference
   setCursorLight(light) {
     this.cursorLight = light;
-    console.log("Cursor light reference set for dust particles");
   }
 
   init() {
-    // console.log("Initializing dust particles with options:", this.options);
-
     // Create geometry
     this.particlesGeometry = new THREE.BufferGeometry();
 
@@ -128,14 +125,7 @@ export const useDustParticles = class DustParticles {
     textureLoader.load(
       "./images/dust_particle.png",
       (texture) => {
-        console.log("✅ Particle texture loaded successfully");
         this.createParticleSystem(texture);
-      },
-      (progress) => {
-        console.log(
-          "Loading particle texture:",
-          Math.round((progress.loaded / progress.total) * 100) + "%"
-        );
       },
       (error) => {
         console.error("❌ Error loading particle texture:", error);
@@ -162,7 +152,6 @@ export const useDustParticles = class DustParticles {
 
     // Create texture from canvas
     const texture = new THREE.CanvasTexture(canvas);
-    console.log("Created default particle texture");
     return texture;
   }
 
@@ -263,10 +252,6 @@ export const useDustParticles = class DustParticles {
 
     // Add to scene
     this.scene.add(this.particles);
-
-    console.log(
-      `Added ${this.options.count} dust particles to the scene with light-based visibility`
-    );
   }
 
   animate(delta) {
@@ -372,8 +357,6 @@ export const useDustParticles = class DustParticles {
 
   // Method to update settings
   updateSettings(options) {
-    console.log("Updating particle settings:", options);
-
     // Update light influence settings
     if (options.lightInfluence !== undefined) {
       this.options.lightInfluence = {
@@ -395,11 +378,6 @@ export const useDustParticles = class DustParticles {
           this.options.lightInfluence.minOpacity;
         this.particlesMaterial.uniforms.maxOpacity.value =
           this.options.lightInfluence.maxOpacity;
-
-        console.log(
-          "Updated light influence settings:",
-          this.options.lightInfluence
-        );
       }
     }
 
@@ -444,7 +422,6 @@ export const useDustParticles = class DustParticles {
         }
 
         this.particlesGeometry.attributes.color.needsUpdate = true;
-        // console.log("Updated particle colors with new blue range:", this.options.color);
       }
     }
 
@@ -456,7 +433,6 @@ export const useDustParticles = class DustParticles {
         this.particlesMaterial.uniforms.opacity
       ) {
         this.particlesMaterial.uniforms.opacity.value = options.opacity;
-        // console.log("Updated particle opacity to:", options.opacity);
       }
     }
 
@@ -472,12 +448,6 @@ export const useDustParticles = class DustParticles {
           Math.random() * (this.options.speed.max - this.options.speed.min) +
           this.options.speed.min;
       }
-      console.log(
-        "Updated particle speeds to range:",
-        this.options.speed.min,
-        "to",
-        this.options.speed.max
-      );
     }
 
     if (options.size !== undefined) {
@@ -500,12 +470,6 @@ export const useDustParticles = class DustParticles {
 
         // Mark attribute for update
         this.particlesGeometry.attributes.size.needsUpdate = true;
-        console.log(
-          "Updated particle sizes to range:",
-          this.options.size.min,
-          "to",
-          this.options.size.max
-        );
       } else {
         console.warn(
           "Cannot update particle sizes: geometry or size attribute not available"
@@ -519,7 +483,6 @@ export const useDustParticles = class DustParticles {
         ...this.options.area,
         ...(typeof options.area === "object" ? options.area : {}),
       };
-      // console.log("Updated particle area to:", this.options.area);
     }
 
     // Handle count updates (this would require recreating the system)

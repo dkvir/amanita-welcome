@@ -1,11 +1,8 @@
 <template>
   <div class="home-page">
     <canvas id="canvas"></canvas>
-    <div class="split uppercase">
-      Lorem ipsum dolor sit amet consectetur adipisicing elit. Cupiditate
-      perferendis, quia at nihil praesentium doloremque. Soluta fuga magnam
-      itaque sequi odio animi ab labore sint, porro facere corrupti molestiae
-      nostrum!
+    <div class="split uppercase" ref="stalker">
+      Lorem ipsum dolor sit amet consectetur adipisicing elit.
     </div>
   </div>
 </template>
@@ -42,6 +39,16 @@ let returnFactor = { value: 0.01 };
 let isMouseMoving = false;
 let mouseTimeout;
 let statueGroup;
+
+let stalker = ref(null);
+let textMouse = {
+  mouseX: 0,
+  mouseY: 0,
+  currentX: 0,
+  currentY: 0,
+  ease: 0.1,
+  easeMove: -0.006,
+};
 
 const config = {
   // Bloom settings
@@ -95,8 +102,9 @@ onMounted(() => {
       linesClass: "lines",
     });
 
-    gsap.set(split.lines, {
-      yPercent: 100,
+    gsap.set(split.words, {
+      yPercent: 115,
+      rotate: 10,
     });
 
     setTimeout(() => {
@@ -104,11 +112,12 @@ onMounted(() => {
         opacity: 1,
         ease: "power2.out",
       });
-      gsap.to(split.lines, {
+      gsap.to(split.words, {
         yPercent: 0,
+        rotate: 0,
         ease: "power2.out",
-        duration: 1.5,
-        stagger: 0.2,
+        duration: 0.9,
+        stagger: 0.05,
       });
     }, 500);
   }, 500);
@@ -117,6 +126,7 @@ onMounted(() => {
     init();
     initStatueGroup();
     animate();
+    window.requestAnimationFrame(tick);
   };
 
   // Load model
@@ -190,6 +200,9 @@ function initRenderer() {
 function onMouseMove(event) {
   if (!isSceneReady) return;
 
+  textMouse.mouseX = event.clientX - window.innerWidth / 2;
+  textMouse.mouseY = event.clientY - window.innerHeight / 2;
+
   lastMouse.x = mouse.x;
   lastMouse.y = mouse.y;
 
@@ -216,6 +229,20 @@ function onMouseMove(event) {
   }
 
   updateCursorLightPosition(event);
+}
+
+function tick() {
+  if (stalker.value) {
+    textMouse.currentX +=
+      (textMouse.mouseX - textMouse.currentX) * textMouse.ease;
+    textMouse.currentY +=
+      (textMouse.mouseY - textMouse.currentY) * textMouse.ease;
+    gsap.set(stalker.value, {
+      x: textMouse.currentX * textMouse.easeMove,
+      y: textMouse.currentY * textMouse.easeMove,
+    });
+    window.requestAnimationFrame(tick);
+  }
 }
 
 function updateCursorLightPosition(event) {
@@ -462,12 +489,13 @@ function animate() {
     left: 50%;
     transform: translate3d(-50%, -50%, 0);
     color: var(--color-white);
-    font-size: 26px;
+    font-size: 48px;
     opacity: var(--split-opacity, 0);
     text-align: center;
     line-height: 1.5;
     .lines-mask {
       overflow: hidden;
+      mask-image: linear-gradient(to top, transparent 10%, black 30%);
     }
   }
 }

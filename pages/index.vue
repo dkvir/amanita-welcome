@@ -2,7 +2,8 @@
   <div class="home-page">
     <canvas id="canvas"></canvas>
     <div class="split uppercase" ref="stalker">
-      Lorem ipsum dolor sit amet consectetur adipisicing elit.
+      <div class="line-mask">Lorem ipsum dolor sit amet</div>
+      <div class="line-mask">consectetur adipisicing elit.</div>
     </div>
   </div>
 </template>
@@ -97,9 +98,7 @@ onMounted(() => {
     gsap.registerPlugin(SplitText);
 
     let split = SplitText.create(".split", {
-      type: "lines, words",
-      mask: "lines",
-      linesClass: "lines",
+      type: "words",
     });
 
     gsap.set(split.words, {
@@ -483,19 +482,23 @@ function animate() {
   #canvas {
     @include size(100%);
   }
-  :deep(.split) {
+  .split {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate3d(-50%, -50%, 0);
     color: var(--color-white);
-    font-size: 48px;
+    font-size: css-clamp(32px, 56px);
     opacity: var(--split-opacity, 0);
     text-align: center;
     line-height: 1.5;
-    .lines-mask {
+    @include mq(max-width 768px) {
+      font-size: css-clamp-vw(18px, 32px, 768);
+    }
+    .line-mask {
       overflow: hidden;
-      mask-image: linear-gradient(to top, transparent 10%, black 30%);
+      mask-image: linear-gradient(to top, transparent 10%, black 20%);
+      white-space: nowrap;
     }
   }
 }

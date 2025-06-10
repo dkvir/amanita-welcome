@@ -4,10 +4,10 @@
     <div class="container flex-column justify-between align-center">
       <nuxt-icon name="logo" class="logo set-opacity" filled></nuxt-icon>
       <div class="split flex-column flex-center" ref="stalker">
-        <div class="soon uppercase set-opacity">comming soon</div>
+        <div class="soon uppercase set-opacity">coming soon</div>
         <div class="lines">
           <div class="line-mask uppercase">NOT A GYM.</div>
-          <div class="line-mask uppercase">A JOuRNEY.</div>
+          <div class="line-mask uppercase">your evolution.</div>
         </div>
       </div>
       <div class="countdown flex-center flex-column">

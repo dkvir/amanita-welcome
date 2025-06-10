@@ -45,9 +45,10 @@ let cursorLightFar, cursorLightFar2;
 
 const countdown = useCountdown();
 
+const { isMobileOrTablet } = useDevice();
+
 // State tracking
 let isSceneReady = false;
-let isModelLoaded = false;
 
 // Mouse rotation variables
 let mouse = new THREE.Vector2();
@@ -202,7 +203,6 @@ onMounted(() => {
       });
 
       scene.add(gltf.scene);
-      isModelLoaded = true;
     },
     undefined,
     (error) => {
@@ -394,7 +394,13 @@ function initStatueGroup() {
   lastMouse.set(0, 0);
   rotationOffset.set(0, 0);
 
-  window.addEventListener("mousemove", onMouseMove);
+  if (isMobileOrTablet) {
+    console.log("isMobile");
+    const deviceTracking = new useDeviceTracking();
+    deviceTracking.addEventListeners();
+  } else {
+    window.addEventListener("mousemove", onMouseMove);
+  }
 }
 
 function init() {

@@ -27,7 +27,7 @@ export default defineNuxtConfig({
       siteUrl: process.env.PUBLIC_SITE_URL,
     },
   },
-  modules: ["nuxt-icons", "@pinia/nuxt", "@nuxtjs/robots", "@nuxtjs/sitemap"],
+  modules: ["nuxt-icons", "@pinia/nuxt", "@nuxtjs/robots", "@nuxtjs/sitemap", "@nuxtjs/device"],
   css: ["@/assets/sass/style.scss"],
   vite: {
     css: {

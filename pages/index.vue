@@ -509,8 +509,8 @@ function animate() {
 <style lang="scss" scoped>
 .home-page {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: 100svw;
+  height: 100svh;
   overflow: hidden;
   #canvas {
     @include size(100%);

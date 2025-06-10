@@ -20,6 +20,11 @@
         </ul>
       </div>
     </div>
+    <div v-if="isMobileOrTablet" class="allow-permisions">
+      <div class="label">allow permisions for device orientation</div>
+      <button @click="clickToAllow" class="button">allow</button>
+      <button class="button">deny</button>
+    </div>
   </div>
 </template>
 
@@ -395,15 +400,6 @@ function initStatueGroup() {
   rotationOffset.set(0, 0);
 
   if (isMobileOrTablet) {
-    window.addEventListener("touchstart", () => {
-      DeviceMotionEvent.requestPermission().then((permissionState) => {
-        console.log("DeviceMotion permission state:", permissionState);
-        if (permissionState === "granted") {
-          const deviceTracking = new useDeviceTracking();
-          deviceTracking.addEventListeners();
-        }
-      });
-    });
   } else {
     window.addEventListener("mousemove", onMouseMove);
   }
@@ -515,6 +511,16 @@ function animate() {
   if (composer) {
     composer.render();
   }
+}
+
+function clickToAllow() {
+  DeviceMotionEvent.requestPermission().then((permissionState) => {
+    console.log("DeviceMotion permission state:", permissionState);
+    if (permissionState === "granted") {
+      const deviceTracking = new useDeviceTracking();
+      deviceTracking.addEventListeners();
+    }
+  });
 }
 </script>
 
@@ -642,6 +648,17 @@ function animate() {
           }
         }
       }
+    }
+  }
+  .allow-permisions {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: aqua;
+    .button {
+      padding: 10px;
+      border: 1px solid var(--color-gray);
     }
   }
 }

@@ -34,23 +34,27 @@ export const useDeviceTracking = class DeviceTracking {
     const { alpha, beta, gamma } = event;
     if (alpha === null || beta === null || gamma === null) return;
 
-    // Convert to radians
     const alphaRad = THREE.MathUtils.degToRad(alpha);
     const betaRad = THREE.MathUtils.degToRad(beta);
     const gammaRad = THREE.MathUtils.degToRad(gamma);
 
-    // Compute orientation quaternion
+    // Orientation as quaternion
     this.euler.set(betaRad, gammaRad, alphaRad, "YXZ");
     this.quaternion.setFromEuler(this.euler);
 
-    // Get forward vector in world space
+    // Forward direction vector
     const direction = this.forward.clone().applyQuaternion(this.quaternion);
+
+    // Project to X/Y plane by setting Z = 0, then normalize
+    direction.z = 0;
+    direction.normalize();
 
     const { depth, xOffset, smoothing } = this.config.cursorLightFar;
 
-    const target = this.camera.position
-      .clone()
-      .add(direction.multiplyScalar(depth));
+    // Apply projected X/Y direction, keeping Z constant
+    const basePosition = this.camera.position.clone();
+    const target = basePosition.add(direction.multiplyScalar(depth));
+    target.z = this.cursorLightFar.position.z; // keep original Z position
 
     this.cursorLightFar.position.lerp(
       target.clone().add(new THREE.Vector3(xOffset, 0, 0)),

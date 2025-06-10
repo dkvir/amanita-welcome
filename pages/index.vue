@@ -543,6 +543,9 @@ function animate() {
     :deep(.logo) {
       height: 40px;
       opacity: 0;
+      @include mq(max-width 768px) {
+        height: css-clamp-vw(30px, 40px, 768);
+      }
       svg {
         height: 100%;
         width: auto;
@@ -553,6 +556,10 @@ function animate() {
         font-size: 18px;
         font-family: var(--font-parmigiano-thin);
         opacity: 0;
+        @include mq(max-width 768px) {
+          margin-bottom: 5px;
+          font-size: css-clamp-vw(14px, 18px, 768);
+        }
       }
       .lines {
         opacity: var(--split-opacity, 0);
@@ -586,15 +593,28 @@ function animate() {
         border: 2px solid var(--color-gray);
         border-radius: 40px;
         padding: 10px;
+        @include mq(max-width 768px) {
+          padding: css-clamp-vw(5px, 10px, 768);
+          border: 1px solid var(--color-gray);
+        }
         .box {
           position: relative;
-          @include size(50px);
+          @include size(css-clamp(40px, 50px));
           @include list-distance(left, 10px);
           border: 2px solid var(--color-gray);
           border-radius: 50%;
 
+          @include mq(max-width 768px) {
+            @include size(css-clamp-vw(30px, 40px, 768));
+            @include list-distance(left, css-clamp-vw(5px, 10px, 768));
+            border: 1px solid var(--color-gray);
+          }
+
           .value {
             font-size: 18px;
+            @include mq(max-width 768px) {
+              font-size: css-clamp-vw(14px, 18px, 768);
+            }
           }
           .label {
             position: absolute;
@@ -604,6 +624,9 @@ function animate() {
             font-size: 12px;
             text-transform: capitalize;
             color: var(--color-gray);
+            @include mq(max-width 768px) {
+              font-size: css-clamp-vw(8px, 12px, 768);
+            }
           }
         }
       }

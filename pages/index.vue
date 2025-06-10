@@ -1,9 +1,11 @@
 <template>
   <div class="home-page">
     <canvas id="canvas"></canvas>
-    <div class="split uppercase" ref="stalker">
-      <div class="line-mask">Lorem ipsum dolor sit amet</div>
-      <div class="line-mask">consectetur adipisicing elit.</div>
+    <div class="split uppercase">
+      <div class="lines" ref="stalker">
+        <div class="line-mask">Lorem ipsum dolor sit amet</div>
+        <div class="line-mask">consectetur adipisicing elit.</div>
+      </div>
     </div>
   </div>
 </template>
@@ -97,7 +99,7 @@ onMounted(() => {
   setTimeout(() => {
     gsap.registerPlugin(SplitText);
 
-    let split = SplitText.create(".split", {
+    let split = SplitText.create(".split .lines", {
       type: "words",
     });
 
@@ -107,7 +109,7 @@ onMounted(() => {
     });
 
     setTimeout(() => {
-      gsap.set(".split", {
+      gsap.set(".split ", {
         opacity: 1,
         ease: "power2.out",
       });
@@ -117,6 +119,9 @@ onMounted(() => {
         ease: "power2.out",
         duration: 0.9,
         stagger: 0.05,
+        onComplete: () => {
+          window.requestAnimationFrame(tick);
+        },
       });
     }, 500);
   }, 500);
@@ -125,7 +130,6 @@ onMounted(() => {
     init();
     initStatueGroup();
     animate();
-    window.requestAnimationFrame(tick);
   };
 
   // Load model
@@ -489,6 +493,7 @@ function animate() {
     transform: translate3d(-50%, -50%, 0);
     color: var(--color-white);
     font-size: css-clamp(32px, 56px);
+    font-family: var(--font-parmigiano-regular);
     opacity: var(--split-opacity, 0);
     text-align: center;
     line-height: 1.5;

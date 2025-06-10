@@ -395,9 +395,15 @@ function initStatueGroup() {
   rotationOffset.set(0, 0);
 
   if (isMobileOrTablet) {
-    console.log("isMobile");
-    const deviceTracking = new useDeviceTracking();
-    deviceTracking.addEventListeners();
+    window.addEventListener("touchstart", () => {
+      DeviceMotionEvent.requestPermission().then((permissionState) => {
+        console.log("DeviceMotion permission state:", permissionState);
+        if (permissionState === "granted") {
+          const deviceTracking = new useDeviceTracking();
+          deviceTracking.addEventListeners();
+        }
+      });
+    });
   } else {
     window.addEventListener("mousemove", onMouseMove);
   }

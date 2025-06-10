@@ -144,7 +144,7 @@ onMounted(() => {
           // window.requestAnimationFrame(tick);
           gsap.to(".countdown", {
             transform: "translateY(0)",
-            duration: 0.5,
+            duration: 1.5,
             delay: 0.5,
             ease: "power2.inOut",
           });

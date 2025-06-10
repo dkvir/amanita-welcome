@@ -2,9 +2,9 @@
   <div class="home-page">
     <canvas id="canvas"></canvas>
     <div class="container flex-column justify-between align-center">
-      <nuxt-icon name="logo" class="logo" filled></nuxt-icon>
+      <nuxt-icon name="logo" class="logo set-opacity" filled></nuxt-icon>
       <div class="split flex-column align-start" ref="stalker">
-        <div class="soon uppercase">comming soon</div>
+        <div class="soon uppercase set-opacity">comming soon</div>
         <div class="lines">
           <div class="line-mask uppercase">NOT A GYM.</div>
           <div class="line-mask uppercase">A JOuRNEY.</div>
@@ -34,6 +34,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import gsap from "gsap";
+import { CustomEase } from "gsap/CustomEase";
 
 // Global variables
 let scene, renderer, camera, statuemesh, envMap, material;
@@ -112,7 +113,7 @@ const loadingManager = new THREE.LoadingManager();
 
 onMounted(() => {
   setTimeout(() => {
-    gsap.registerPlugin(SplitText);
+    gsap.registerPlugin(SplitText, CustomEase);
 
     let split = SplitText.create(".container .lines", {
       type: "words",
@@ -128,9 +129,9 @@ onMounted(() => {
         opacity: 1,
       });
 
-      gsap.to(".container .soon", {
+      gsap.to(".set-opacity", {
         opacity: 1,
-        duration: 1,
+        duration: 0.9,
         ease: "power2.inOut",
       });
 
@@ -144,9 +145,9 @@ onMounted(() => {
           // window.requestAnimationFrame(tick);
           gsap.to(".countdown", {
             transform: "translateY(0)",
-            duration: 1.5,
+            duration: 0.9,
             delay: 0.5,
-            ease: "power2.inOut",
+            ease: "back.out(1.7)",
           });
         },
       });
@@ -541,6 +542,7 @@ function animate() {
     }
     :deep(.logo) {
       height: 40px;
+      opacity: 0;
       svg {
         height: 100%;
         width: auto;

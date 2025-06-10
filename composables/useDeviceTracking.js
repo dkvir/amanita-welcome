@@ -34,27 +34,25 @@ export const useDeviceTracking = class DeviceTracking {
     const { alpha, beta, gamma } = event;
     if (alpha === null || beta === null || gamma === null) return;
 
+    // Convert to radians
     const alphaRad = THREE.MathUtils.degToRad(alpha);
     const betaRad = THREE.MathUtils.degToRad(beta);
     const gammaRad = THREE.MathUtils.degToRad(gamma);
 
-    // Orientation as quaternion
+    // Orientation to quaternion
     this.euler.set(betaRad, gammaRad, alphaRad, "YXZ");
     this.quaternion.setFromEuler(this.euler);
 
-    // Forward direction vector
+    // Projected direction (X/Y only)
     const direction = this.forward.clone().applyQuaternion(this.quaternion);
-
-    // Project to X/Y plane by setting Z = 0, then normalize
     direction.z = 0;
     direction.normalize();
 
     const { depth, xOffset, smoothing } = this.config.cursorLightFar;
 
-    // Apply projected X/Y direction, keeping Z constant
     const basePosition = this.camera.position.clone();
     const target = basePosition.add(direction.multiplyScalar(depth));
-    target.z = this.cursorLightFar.position.z; // keep original Z position
+    target.z = this.cursorLightFar.position.z; // maintain Z
 
     this.cursorLightFar.position.lerp(
       target.clone().add(new THREE.Vector3(xOffset, 0, 0)),
@@ -64,6 +62,19 @@ export const useDeviceTracking = class DeviceTracking {
       target.clone().add(new THREE.Vector3(-xOffset, 0, 0)),
       smoothing
     );
+
+    // --- Statue group rotation (like mousemove effect) ---
+    const maxTilt = 30;
+    const normX = THREE.MathUtils.clamp(gamma / maxTilt, -1, 1); // left/right
+    const normY = THREE.MathUtils.clamp(beta / maxTilt, -1, 1); // forward/back
+
+    const targetRotationX = normY * 0.3;
+    const targetRotationY = normX * 0.3;
+
+    this.statueGroup.rotation.x +=
+      (targetRotationX - this.statueGroup.rotation.x) * 0.1;
+    this.statueGroup.rotation.y +=
+      (targetRotationY - this.statueGroup.rotation.y) * 0.1;
   }
 
   handleMotion(event) {

@@ -1,10 +1,23 @@
 <template>
   <div class="home-page">
     <canvas id="canvas"></canvas>
-    <div class="split uppercase">
-      <div class="lines" ref="stalker">
-        <div class="line-mask">Lorem ipsum dolor sit amet</div>
-        <div class="line-mask">consectetur adipisicing elit.</div>
+    <div class="container flex-column justify-between align-center">
+      <nuxt-icon name="logo" class="logo" filled></nuxt-icon>
+      <div class="split flex-column align-start" ref="stalker">
+        <div class="soon uppercase">comming soon</div>
+        <div class="lines">
+          <div class="line-mask uppercase">NOT A GYM.</div>
+          <div class="line-mask uppercase">A JOuRNEY.</div>
+        </div>
+      </div>
+      <div class="countdown flex-center flex-column">
+        <div class="title">Countdown</div>
+        <ul class="boxes flex">
+          <li v-for="(item, index) in countdown" class="box flex-center">
+            <div class="label">{{ item.label }}</div>
+            <div class="value">{{ item.value }}</div>
+          </li>
+        </ul>
       </div>
     </div>
   </div>
@@ -28,6 +41,8 @@ let composer, bloomPass, bokehPass;
 let dustParticles;
 let clock = new THREE.Clock();
 let cursorLightFar, cursorLightFar2;
+
+const countdown = useCountdown();
 
 // State tracking
 let isSceneReady = false;
@@ -99,28 +114,40 @@ onMounted(() => {
   setTimeout(() => {
     gsap.registerPlugin(SplitText);
 
-    let split = SplitText.create(".split .lines", {
+    let split = SplitText.create(".container .lines", {
       type: "words",
     });
 
     gsap.set(split.words, {
-      yPercent: 115,
+      yPercent: 125,
       rotate: 10,
     });
 
     setTimeout(() => {
-      gsap.set(".split ", {
+      gsap.set(".container .lines", {
         opacity: 1,
-        ease: "power2.out",
       });
+
+      gsap.to(".container .soon", {
+        opacity: 1,
+        duration: 1,
+        ease: "power2.inOut",
+      });
+
       gsap.to(split.words, {
         yPercent: 0,
         rotate: 0,
         ease: "power2.out",
         duration: 0.9,
         stagger: 0.05,
-        onComplete: () => {
-          window.requestAnimationFrame(tick);
+        onStart: () => {
+          // window.requestAnimationFrame(tick);
+          gsap.to(".countdown", {
+            transform: "translateY(0)",
+            duration: 0.5,
+            delay: 0.5,
+            ease: "power2.inOut",
+          });
         },
       });
     }, 500);
@@ -142,6 +169,7 @@ onMounted(() => {
         camera = gltf.cameras[0];
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
+        camera.position.set(-0.05, 0.5, 2.1);
       } else {
         // Fallback camera if none in model
         camera = new THREE.PerspectiveCamera(
@@ -486,24 +514,97 @@ function animate() {
   #canvas {
     @include size(100%);
   }
-  .split {
+  .container {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate3d(-50%, -50%, 0);
-    color: var(--color-white);
-    font-size: css-clamp(32px, 56px);
-    font-family: var(--font-parmigiano-regular);
-    opacity: var(--split-opacity, 0);
-    text-align: center;
-    line-height: 1.5;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: var(--page-offset-padding);
+    padding-bottom: calc(var(--page-offset-padding) / 1.3);
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 10%;
+      background: linear-gradient(
+        to bottom,
+        transparent 50%,
+        var(--color-black) 100%
+      );
+    }
+
     @include mq(max-width 768px) {
       font-size: css-clamp-vw(18px, 32px, 768);
     }
-    .line-mask {
-      overflow: hidden;
-      mask-image: linear-gradient(to top, transparent 10%, black 20%);
-      white-space: nowrap;
+    :deep(.logo) {
+      height: 40px;
+      svg {
+        height: 100%;
+        width: auto;
+      }
+    }
+    .split {
+      .soon {
+        font-size: 18px;
+        font-family: var(--font-parmigiano-thin);
+        opacity: 0;
+      }
+      .lines {
+        opacity: var(--split-opacity, 0);
+        font-size: css-clamp(44px, 104px);
+        color: var(--color-white);
+        text-align: center;
+      }
+      .line-mask {
+        white-space: nowrap;
+        overflow: hidden;
+        line-height: 1;
+        &:first-child {
+          font-family: var(--font-parmigiano-thin);
+        }
+        &:last-child {
+          font-family: var(--font-parmigiano-regular);
+        }
+      }
+    }
+    .countdown {
+      font-family: var(--font-pingroundgelvariable-regular);
+      padding-bottom: 25px;
+      transform: translateY(150%);
+
+      .title {
+        color: var(--color-gray);
+        font-size: 14px;
+      }
+      .boxes {
+        margin-top: 10px;
+        border: 2px solid var(--color-gray);
+        border-radius: 40px;
+        padding: 10px;
+        .box {
+          position: relative;
+          @include size(50px);
+          @include list-distance(left, 10px);
+          border: 2px solid var(--color-gray);
+          border-radius: 50%;
+
+          .value {
+            font-size: 18px;
+          }
+          .label {
+            position: absolute;
+            top: 150%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            font-size: 12px;
+            text-transform: capitalize;
+            color: var(--color-gray);
+          }
+        }
+      }
     }
   }
 }

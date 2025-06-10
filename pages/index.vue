@@ -531,7 +531,14 @@ function clickToAllow() {
   DeviceMotionEvent.requestPermission().then((permissionState) => {
     console.log("DeviceMotion permission state:", permissionState);
     if (permissionState === "granted") {
-      const deviceTracking = new useDeviceTracking();
+      const deviceTracking = new useDeviceTracking(
+        camera,
+        {
+          cursorLightFar,
+          cursorLightFar2,
+        },
+        config
+      );
       deviceTracking.addEventListeners();
     }
   });
@@ -683,7 +690,7 @@ function clickToAllow() {
       --permisions-opacity: 1;
     }
     .buttons {
-      margin-top: 10px;
+      margin-top: 5px;
       gap: 10px;
     }
     .button {

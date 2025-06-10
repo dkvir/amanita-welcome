@@ -120,7 +120,7 @@ onMounted(() => {
     });
 
     gsap.set(split.words, {
-      yPercent: 125,
+      yPercent: 150,
       rotate: 10,
     });
 

@@ -20,10 +20,18 @@
         </ul>
       </div>
     </div>
-    <div v-if="isMobileOrTablet" class="allow-permisions">
-      <div class="label">allow permisions for device orientation</div>
-      <button @click="clickToAllow" class="button">allow</button>
-      <button class="button">deny</button>
+    <div
+      v-if="isMobileOrTablet"
+      :class="[
+        'allow-permisions flex-center flex-column',
+        { 'is-visible': permisionsVisibility },
+      ]"
+    >
+      <div class="label">Permissions for mobile sensor access</div>
+      <div class="buttons flex">
+        <button @click="clickToAllow" class="button">allow</button>
+        <button class="button">deny</button>
+      </div>
     </div>
   </div>
 </template>
@@ -51,6 +59,8 @@ let cursorLightFar, cursorLightFar2;
 const countdown = useCountdown();
 
 const { isMobileOrTablet } = useDevice();
+
+let permisionsVisibility = ref(false);
 
 // State tracking
 let isSceneReady = false;
@@ -155,6 +165,9 @@ onMounted(() => {
             delay: 0.5,
             ease: "back.out(1.7)",
           });
+        },
+        onComplete: () => {
+          permisionsVisibility.value = true;
         },
       });
     }, 500);
@@ -514,6 +527,7 @@ function animate() {
 }
 
 function clickToAllow() {
+  permisionsVisibility.value = false;
   DeviceMotionEvent.requestPermission().then((permissionState) => {
     console.log("DeviceMotion permission state:", permissionState);
     if (permissionState === "granted") {
@@ -654,11 +668,35 @@ function clickToAllow() {
     position: fixed;
     top: 50%;
     left: 50%;
+    z-index: 1;
+    padding: 20px 10px;
     transform: translate(-50%, -50%);
-    background-color: aqua;
+    backdrop-filter: blur(4px);
+    border-radius: 10px;
+    border: 1px solid var(--color-gray);
+    width: 80%;
+    font-size: 14px;
+    opacity: var(--permisions-opacity, 0);
+    transition: opacity 0.4s ease-in-out;
+    transition-delay: 0.5s;
+    &.is-visible {
+      --permisions-opacity: 1;
+    }
+    .buttons {
+      margin-top: 10px;
+      gap: 10px;
+    }
     .button {
       padding: 10px;
-      border: 1px solid var(--color-gray);
+      color: var(--color-white);
+      text-transform: capitalize;
+      opacity: 0.8;
+      &:first-child {
+        border-bottom: 1px solid #336eff;
+      }
+      &:last-child {
+        border-bottom: 1px solid red;
+      }
     }
   }
 }

@@ -1,7 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import favicon from "./config/favicon";
+
 export default defineNuxtConfig({
   compatibilityDate: "2025-05-15",
   devtools: { enabled: false },
+
   app: {
     head: {
       meta: [
@@ -15,8 +18,13 @@ export default defineNuxtConfig({
         { name: "google", content: "notranslate" },
         // ...favicon.meta,
       ],
-      // link: [...favicon.links],
+      link: [...favicon.links],
       script: [{ src: "/js/SplitText.min.js" }],
+    },
+  },
+  runtimeConfig: {
+    public: {
+      siteUrl: process.env.PUBLIC_SITE_URL,
     },
   },
   modules: ["nuxt-icons", "@pinia/nuxt", "@nuxtjs/robots", "@nuxtjs/sitemap"],

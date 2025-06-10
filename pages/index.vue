@@ -3,7 +3,7 @@
     <canvas id="canvas"></canvas>
     <div class="container flex-column justify-between align-center">
       <nuxt-icon name="logo" class="logo set-opacity" filled></nuxt-icon>
-      <div class="split flex-column align-start" ref="stalker">
+      <div class="split flex-column flex-center" ref="stalker">
         <div class="soon uppercase set-opacity">comming soon</div>
         <div class="lines">
           <div class="line-mask uppercase">NOT A GYM.</div>

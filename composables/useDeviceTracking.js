@@ -71,9 +71,6 @@ export const useDeviceTracking = class DeviceTracking {
 
     window.addEventListener("devicemotion", this.handleMotion);
     window.addEventListener("deviceorientation", this.handleOrientation);
-    console.log(
-      "Enhanced device tracking enabled - desktop-like light behavior"
-    );
   }
 
   handleOrientation(event) {
@@ -285,6 +282,5 @@ export const useDeviceTracking = class DeviceTracking {
   disable() {
     window.removeEventListener("devicemotion", this.handleMotion);
     window.removeEventListener("deviceorientation", this.handleOrientation);
-    console.log("Device tracking disabled");
   }
 };

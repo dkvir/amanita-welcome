@@ -19,19 +19,16 @@
           </li>
         </ul> -->
       </div>
-    </div>
-    <div
-      v-if="isMobileOrTablet"
-      :class="[
-        'allow-permisions flex-center flex-column',
-        { 'is-visible': permisionsVisibility },
-      ]"
-    >
-      <div class="label">Permissions for mobile sensor access</div>
-      <div class="buttons flex">
-        <button @click="clickToAllow" class="button">allow</button>
-        <button @click="clickToDeny" class="button">deny</button>
-      </div>
+      <allow-permisions
+        v-if="isMobileOrTablet"
+        :class="{ 'is-visible': permisionsVisibility }"
+        :permisionsVisibility="permisionsVisibility"
+        :cursorLightFar="cursorLightFar"
+        :cursorLightFar2="cursorLightFar2"
+        :config="config"
+        @hasPermision="hasPermisions"
+        @changePermisionsVisibility="changePermisionsVisibility"
+      />
     </div>
   </div>
 </template>
@@ -59,7 +56,6 @@ let cursorLightFar, cursorLightFar2;
 const { isMobileOrTablet } = useDevice();
 const countdown = useCountdown();
 let permisionsVisibility = ref(false);
-let infiniteLightsAnimation = null;
 
 // State tracking
 let isSceneReady = false;
@@ -383,8 +379,7 @@ function initStatueGroup() {
   lastMouse.set(0, 0);
   rotationOffset.set(0, 0);
 
-  if (isMobileOrTablet) {
-  } else {
+  if (!isMobileOrTablet) {
     window.addEventListener("mousemove", onMouseMove);
   }
 }
@@ -497,181 +492,23 @@ function animate() {
   }
 }
 
-function clickToAllow() {
-  permisionsVisibility.value = false;
-
-  if (
-    typeof DeviceMotionEvent !== "undefined" &&
-    typeof DeviceMotionEvent.requestPermission === "function"
-  ) {
-    DeviceMotionEvent.requestPermission()
-      .then((permissionState) => {
-        console.log("DeviceMotion permission state:", permissionState);
-        if (permissionState === "granted") {
-          // Stop any infinite animation before starting device tracking
-          stopInfiniteLightsAnimation();
-
-          // Use the safer version that works with your existing rotation system
-          const deviceTracking = new useDeviceTracking(
-            camera,
-            {
-              cursorLightFar,
-              cursorLightFar2,
-            },
-            config,
-            statueGroup,
-            rotationOffset // Pass your existing rotationOffset object
-          );
-
-          deviceTracking.addEventListeners();
-
-          console.log("Device tracking initialized successfully");
-        } else {
-          createInfiniteLightsAnimation();
-        }
-      })
-      .catch((error) => {
-        console.error("Error requesting device motion permission:", error);
-        permisionsVisibility.value = true;
-      });
-  } else {
-    createInfiniteLightsAnimation();
-  }
-}
-
-function clickToDeny() {
-  permisionsVisibility.value = false;
-  createInfiniteLightsAnimation();
-}
-function createInfiniteLightsAnimation() {
-  if (!cursorLightFar || !cursorLightFar2 || !camera) return;
-
-  if (infiniteLightsAnimation) {
-    // Handle cleanup for array of timelines
-    if (Array.isArray(infiniteLightsAnimation)) {
-      infiniteLightsAnimation.forEach((timeline) => timeline.kill());
-    } else {
-      infiniteLightsAnimation.kill();
-    }
-  }
-
-  const initialLight1 = cursorLightFar.position.clone();
-  const initialLight2 = cursorLightFar2.position.clone();
-
-  // Simple animation config
-  const animationConfig = {
-    // Movement range (similar to mouse movement range)
-    rangeX: 1.5,
-    rangeY: 1.2,
-
-    // Animation timing
-    duration: 8, // Total cycle duration
-
-    // Offset between the two lights
-    lightOffset: config.cursorLightFar.xOffset,
-  };
-
-  // Define 5 circular positions (similar to mouse positions)
-  const positions = [
-    { x: 0, y: 0 }, // Center
-    { x: animationConfig.rangeX * 0.8, y: animationConfig.rangeY * 0.6 }, // Top-right
-    { x: animationConfig.rangeX * 0.3, y: animationConfig.rangeY * 1.0 }, // Top
-    { x: -animationConfig.rangeX * 0.6, y: animationConfig.rangeY * 0.4 }, // Top-left
-    { x: -animationConfig.rangeX * 0.9, y: -animationConfig.rangeY * 0.7 }, // Bottom-left
-    { x: animationConfig.rangeX * 0.5, y: -animationConfig.rangeY * 0.8 }, // Bottom-right
-    { x: 0, y: 0 }, // Back to center to complete the loop smoothly
-  ];
-
-  // Create separate infinite timelines for each light
-  const positionDuration = animationConfig.duration / (positions.length - 1); // -1 because we added duplicate center
-
-  // === FIRST LIGHT ANIMATION ===
-  const light1Timeline = gsap.timeline({ repeat: -1 });
-  positions.forEach((pos, index) => {
-    light1Timeline.to(cursorLightFar.position, {
-      duration: positionDuration,
-      x: initialLight1.x + pos.x,
-      y: initialLight1.y + pos.y,
-      ease: "none", // Linear movement
-    });
-  });
-
-  // === SECOND LIGHT ANIMATION (offset pattern - opposite direction) ===
-  const light2Timeline = gsap.timeline({ repeat: -1 });
-  positions.forEach((pos, index) => {
-    // Reverse the positions for second light to create different pattern
-    const reverseIndex = positions.length - 1 - index;
-    const reversePos = positions[reverseIndex];
-
-    light2Timeline.to(cursorLightFar2.position, {
-      duration: positionDuration,
-      x: initialLight2.x + reversePos.x * 0.7, // Slightly different movement
-      y: initialLight2.y + reversePos.y * 0.8,
-      ease: "none", // Linear movement
-    });
-  });
-
-  // === INTENSITY ANIMATIONS ===
-  // Create separate timelines for intensity variations
-  const intensityTimeline1 = gsap.timeline({ repeat: -1 });
-  intensityTimeline1.to(cursorLightFar, {
-    duration: animationConfig.duration / 2,
-    intensity: config.cursorLightFar.intensity * 1.2,
-    ease: "sine.inOut",
-    yoyo: true,
-    repeat: -1,
-  });
-
-  const intensityTimeline2 = gsap.timeline({ repeat: -1 });
-  intensityTimeline2.to(cursorLightFar2, {
-    duration: animationConfig.duration / 3,
-    intensity: config.cursorLightFar.intensity * 1.1,
-    ease: "sine.inOut",
-    yoyo: true,
-    repeat: -1,
-  });
-
-  // Store all timelines for cleanup
-  infiniteLightsAnimation = [
-    light1Timeline,
-    light2Timeline,
-    intensityTimeline1,
-    intensityTimeline2,
-  ];
-
-  console.log(
-    "Simplified infinite lights animation started - 5 circular positions"
-  );
-}
-
-function stopInfiniteLightsAnimation() {
-  if (infiniteLightsAnimation) {
-    // Handle cleanup for array of timelines
-    if (Array.isArray(infiniteLightsAnimation)) {
-      infiniteLightsAnimation.forEach((timeline) => timeline.kill());
-    } else {
-      infiniteLightsAnimation.kill();
-    }
-    infiniteLightsAnimation = null;
-
-    // Reset lights to original intensity
-    if (cursorLightFar) {
-      cursorLightFar.intensity = config.cursorLightFar.intensity;
-    }
-    if (cursorLightFar2) {
-      cursorLightFar2.intensity = config.cursorLightFar.intensity;
-    }
-
-    // Kill all individual timelines
-    gsap.killTweensOf([
+function hasPermisions() {
+  const deviceTracking = new useDeviceTracking(
+    camera,
+    {
       cursorLightFar,
       cursorLightFar2,
-      cursorLightFar.position,
-      cursorLightFar2.position,
-    ]);
+    },
+    config,
+    statueGroup,
+    rotationOffset
+  );
 
-    console.log("Infinite lights animation stopped");
-  }
+  deviceTracking.addEventListeners();
+}
+
+function changePermisionsVisibility(value) {
+  permisionsVisibility.value = value;
 }
 </script>
 
@@ -800,41 +637,6 @@ function stopInfiniteLightsAnimation() {
     //     }
     //   }
     // }
-  }
-  .allow-permisions {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    z-index: 1;
-    padding: 20px 10px;
-    transform: translate(-50%, -50%);
-    backdrop-filter: blur(4px);
-    border-radius: 10px;
-    border: 1px solid var(--color-gray);
-    width: 80%;
-    font-size: 14px;
-    opacity: var(--permisions-opacity, 0);
-    transition: opacity 0.4s ease-in-out;
-    transition-delay: 0.5s;
-    &.is-visible {
-      --permisions-opacity: 1;
-    }
-    .buttons {
-      margin-top: 5px;
-      gap: 10px;
-    }
-    .button {
-      padding: 10px;
-      color: var(--color-white);
-      text-transform: capitalize;
-      opacity: 0.8;
-      &:first-child {
-        border-bottom: 1px solid #336eff;
-      }
-      &:last-child {
-        border-bottom: 1px solid red;
-      }
-    }
   }
 }
 </style>

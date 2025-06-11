@@ -537,7 +537,8 @@ function clickToAllow() {
           cursorLightFar,
           cursorLightFar2,
         },
-        config
+        config,
+        statueGroup // Pass the statueGroup reference
       );
       deviceTracking.addEventListeners();
     }

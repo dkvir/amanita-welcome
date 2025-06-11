@@ -528,21 +528,32 @@ function animate() {
 
 function clickToAllow() {
   permisionsVisibility.value = false;
-  DeviceMotionEvent.requestPermission().then((permissionState) => {
-    console.log("DeviceMotion permission state:", permissionState);
-    if (permissionState === "granted") {
-      const deviceTracking = new useDeviceTracking(
-        camera,
-        {
-          cursorLightFar,
-          cursorLightFar2,
-        },
-        config,
-        statueGroup // Pass the statueGroup reference
-      );
-      deviceTracking.addEventListeners();
-    }
-  });
+
+  DeviceMotionEvent.requestPermission()
+    .then((permissionState) => {
+      console.log("DeviceMotion permission state:", permissionState);
+      if (permissionState === "granted") {
+        // Use the safer version that works with your existing rotation system
+        const deviceTracking = new useDeviceTracking(
+          camera,
+          {
+            cursorLightFar,
+            cursorLightFar2,
+          },
+          config,
+          statueGroup,
+          rotationOffset // Pass your existing rotationOffset object
+        );
+
+        deviceTracking.addEventListeners();
+
+        console.log("Device tracking initialized successfully");
+      }
+    })
+    .catch((error) => {
+      console.error("Error requesting device motion permission:", error);
+      permisionsVisibility.value = true;
+    });
 }
 </script>
 

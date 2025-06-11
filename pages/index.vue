@@ -10,26 +10,19 @@
           <div class="line-mask uppercase">your evolution.</div>
         </div>
       </div>
-      <div class="countdown flex-center flex-column">
-        <!-- <div class="title">Countdown</div>
-        <ul class="boxes flex">
-          <li v-for="(item, index) in countdown" class="box flex-center">
-            <div class="label">{{ item.label }}</div>
-            <div class="value">{{ item.value }}</div>
-          </li>
-        </ul> -->
-      </div>
-      <allow-permisions
-        v-if="isMobileOrTablet"
-        :class="{ 'is-visible': permisionsVisibility }"
-        :permisionsVisibility="permisionsVisibility"
-        :cursorLightFar="cursorLightFar"
-        :cursorLightFar2="cursorLightFar2"
-        :config="config"
-        @hasPermision="hasPermisions"
-        @changePermisionsVisibility="changePermisionsVisibility"
-      />
+      <!-- <countdown /> -->
+      <div class="footer"></div>
     </div>
+    <allow-permisions
+      v-if="isMobileOrTablet"
+      :class="{ 'is-visible': permisionsVisibility }"
+      :permisionsVisibility="permisionsVisibility"
+      :cursorLightFar="cursorLightFar"
+      :cursorLightFar2="cursorLightFar2"
+      :config="config"
+      @hasPermision="hasPermisions"
+      @changePermisionsVisibility="changePermisionsVisibility"
+    />
   </div>
 </template>
 
@@ -54,7 +47,6 @@ let clock = new THREE.Clock();
 let cursorLightFar, cursorLightFar2;
 
 const { isMobileOrTablet } = useDevice();
-const countdown = useCountdown();
 let permisionsVisibility = ref(false);
 
 // State tracking
@@ -142,14 +134,14 @@ onMounted(() => {
         ease: "power2.out",
         duration: 0.9,
         stagger: 0.05,
-        onStart: () => {
-          // gsap.to(".countdown", {
-          //   transform: "translateY(0)",
-          //   duration: 0.9,
-          //   delay: 0.5,
-          //   ease: "back.out(1.7)",
-          // });
-        },
+        // onStart: () => {
+        //   gsap.to(".countdown", {
+        //     transform: "translateY(0)",
+        //     duration: 0.9,
+        //     delay: 0.5,
+        //     ease: "back.out(1.7)",
+        //   });
+        // },
         onComplete: () => {
           permisionsVisibility.value = true;
         },
@@ -585,58 +577,6 @@ function changePermisionsVisibility(value) {
         }
       }
     }
-    // .countdown {
-    //   font-family: var(--font-pingroundgelvariable-regular);
-    //   padding-bottom: 25px;
-    //   transform: translateY(150%);
-
-    //   .title {
-    //     color: var(--color-gray);
-    //     font-size: 14px;
-    //   }
-    //   .boxes {
-    //     margin-top: 10px;
-    //     border: 2px solid var(--color-gray);
-    //     border-radius: 40px;
-    //     padding: 10px;
-    //     @include mq(max-width 768px) {
-    //       padding: css-clamp-vw(5px, 10px, 768);
-    //       border: 1px solid var(--color-gray);
-    //     }
-    //     .box {
-    //       position: relative;
-    //       @include size(css-clamp(40px, 50px));
-    //       @include list-distance(left, 10px);
-    //       border: 2px solid var(--color-gray);
-    //       border-radius: 50%;
-
-    //       @include mq(max-width 768px) {
-    //         @include size(css-clamp-vw(30px, 40px, 768));
-    //         @include list-distance(left, css-clamp-vw(5px, 10px, 768));
-    //         border: 1px solid var(--color-gray);
-    //       }
-
-    //       .value {
-    //         font-size: 18px;
-    //         @include mq(max-width 768px) {
-    //           font-size: css-clamp-vw(14px, 18px, 768);
-    //         }
-    //       }
-    //       .label {
-    //         position: absolute;
-    //         top: 150%;
-    //         left: 50%;
-    //         transform: translate(-50%, 0);
-    //         font-size: 12px;
-    //         text-transform: capitalize;
-    //         color: var(--color-gray);
-    //         @include mq(max-width 768px) {
-    //           font-size: css-clamp-vw(8px, 12px, 768);
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
   }
 }
 </style>

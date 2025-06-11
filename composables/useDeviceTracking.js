@@ -25,8 +25,8 @@ export const useDeviceTracking = class DeviceTracking {
     // Enhanced sensitivity settings - mimicking desktop mouse behavior
     this.sensitivity = {
       // Light position sensitivity
-      lightDepthMultiplier: 2.8,
-      lightRangeMultiplier: 2.5,
+      lightDepthMultiplier: 1.8,
+      lightRangeMultiplier: 1.5,
 
       // Device rotation sensitivity (similar to mouseMoveFactor in desktop)
       rotationSensitivity: 0.8, // Similar to desktop mouseMoveFactor of 0.05 but scaled for device

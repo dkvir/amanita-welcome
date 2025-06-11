@@ -30,7 +30,7 @@
       <div class="label">Permissions for mobile sensor access</div>
       <div class="buttons flex">
         <button @click="clickToAllow" class="button">allow</button>
-        <button class="button">deny</button>
+        <button @click="clickToDeny" class="button">deny</button>
       </div>
     </div>
   </div>
@@ -56,11 +56,10 @@ let dustParticles;
 let clock = new THREE.Clock();
 let cursorLightFar, cursorLightFar2;
 
-const countdown = useCountdown();
-
 const { isMobileOrTablet } = useDevice();
-
+const countdown = useCountdown();
 let permisionsVisibility = ref(false);
+let infiniteLightsAnimation = null;
 
 // State tracking
 let isSceneReady = false;
@@ -533,6 +532,9 @@ function clickToAllow() {
     .then((permissionState) => {
       console.log("DeviceMotion permission state:", permissionState);
       if (permissionState === "granted") {
+        // Stop any infinite animation before starting device tracking
+        stopInfiniteLightsAnimation();
+
         // Use the safer version that works with your existing rotation system
         const deviceTracking = new useDeviceTracking(
           camera,
@@ -554,6 +556,284 @@ function clickToAllow() {
       console.error("Error requesting device motion permission:", error);
       permisionsVisibility.value = true;
     });
+}
+
+function clickToDeny() {
+  permisionsVisibility.value = false;
+
+  // Start infinite lights animation as fallback
+  createInfiniteLightsAnimation();
+
+  console.log("Device tracking denied - infinite lights animation enabled");
+}
+
+function createInfiniteLightsAnimation() {
+  if (!cursorLightFar || !cursorLightFar2 || !camera) return;
+
+  // Kill any existing animation
+  if (infiniteLightsAnimation) {
+    infiniteLightsAnimation.kill();
+  }
+
+  // Store initial positions
+  const initialLight1 = cursorLightFar.position.clone();
+  const initialLight2 = cursorLightFar2.position.clone();
+
+  // Create animation parameters similar to device tracking
+  const animationConfig = {
+    // Movement range (similar to device orientation range)
+    rangeX: 2.5,
+    rangeY: 1.8,
+    rangeZ: 0.8,
+
+    // Animation timing
+    duration: {
+      primary: 8, // Main movement cycle
+      secondary: 12, // Secondary wave movement
+      tertiary: 6, // Z-axis movement
+    },
+
+    // Offset between the two lights (similar to xOffset in config)
+    lightOffset: config.cursorLightFar.xOffset,
+
+    // Base depth from camera (similar to device tracking depth)
+    baseDepth: config.cursorLightFar.depth,
+  };
+
+  // Create the infinite timeline
+  infiniteLightsAnimation = gsap.timeline({ repeat: -1 });
+
+  // === FIRST LIGHT ANIMATION ===
+  // Create circular-like movement using multiple keyframes
+  infiniteLightsAnimation.to(
+    cursorLightFar.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight1.x + animationConfig.rangeX * 0.7,
+      y: initialLight1.y + animationConfig.rangeY * 0.5,
+      ease: "power2.inOut",
+    },
+    0
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight1.x + animationConfig.rangeX * 0.3,
+      y: initialLight1.y + animationConfig.rangeY,
+      ease: "power2.inOut",
+    },
+    animationConfig.duration.primary / 4
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight1.x - animationConfig.rangeX * 0.5,
+      y: initialLight1.y + animationConfig.rangeY * 0.3,
+      ease: "power2.inOut",
+    },
+    animationConfig.duration.primary / 2
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight1.x - animationConfig.rangeX * 0.8,
+      y: initialLight1.y - animationConfig.rangeY * 0.6,
+      ease: "power2.inOut",
+    },
+    (animationConfig.duration.primary / 4) * 3
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight1.x - animationConfig.rangeX * 0.2,
+      y: initialLight1.y - animationConfig.rangeY * 0.9,
+      ease: "power2.inOut",
+    },
+    animationConfig.duration.primary
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight1.x + animationConfig.rangeX * 0.6,
+      y: initialLight1.y - animationConfig.rangeY * 0.4,
+      ease: "power2.inOut",
+    },
+    animationConfig.duration.primary + animationConfig.duration.primary / 4
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight1.x,
+      y: initialLight1.y,
+      ease: "power2.inOut",
+    },
+    animationConfig.duration.primary + animationConfig.duration.primary / 2
+  );
+
+  // === SECOND LIGHT ANIMATION (offset pattern) ===
+  infiniteLightsAnimation.to(
+    cursorLightFar2.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight2.x - animationConfig.rangeX * 0.6,
+      y: initialLight2.y - animationConfig.rangeY * 0.4,
+      ease: "power2.inOut",
+    },
+    0
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar2.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight2.x - animationConfig.rangeX * 0.9,
+      y: initialLight2.y + animationConfig.rangeY * 0.2,
+      ease: "power2.inOut",
+    },
+    animationConfig.duration.primary / 4
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar2.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight2.x - animationConfig.rangeX * 0.3,
+      y: initialLight2.y + animationConfig.rangeY * 0.8,
+      ease: "power2.inOut",
+    },
+    animationConfig.duration.primary / 2
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar2.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight2.x + animationConfig.rangeX * 0.4,
+      y: initialLight2.y + animationConfig.rangeY * 0.7,
+      ease: "power2.inOut",
+    },
+    (animationConfig.duration.primary / 4) * 3
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar2.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight2.x + animationConfig.rangeX * 0.8,
+      y: initialLight2.y - animationConfig.rangeY * 0.1,
+      ease: "power2.inOut",
+    },
+    animationConfig.duration.primary
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar2.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight2.x + animationConfig.rangeX * 0.5,
+      y: initialLight2.y - animationConfig.rangeY * 0.8,
+      ease: "power2.inOut",
+    },
+    animationConfig.duration.primary + animationConfig.duration.primary / 4
+  );
+
+  infiniteLightsAnimation.to(
+    cursorLightFar2.position,
+    {
+      duration: animationConfig.duration.primary / 4,
+      x: initialLight2.x,
+      y: initialLight2.y,
+      ease: "power2.inOut",
+    },
+    animationConfig.duration.primary + animationConfig.duration.primary / 2
+  );
+
+  // === ADDITIONAL LAYER ANIMATIONS ===
+  // Add continuous sine wave on Y axis for breathing effect
+  const breathingTl = gsap.timeline({ repeat: -1, yoyo: true });
+  breathingTl.to(cursorLightFar.position, {
+    duration: animationConfig.duration.secondary / 2,
+    y: `+=${animationConfig.rangeY * 0.4}`,
+    ease: "sine.inOut",
+  });
+
+  const breathingTl2 = gsap.timeline({ repeat: -1, yoyo: true, delay: 2 });
+  breathingTl2.to(cursorLightFar2.position, {
+    duration: (animationConfig.duration.secondary * 0.8) / 2,
+    y: `-=${animationConfig.rangeY * 0.3}`,
+    ease: "sine.inOut",
+  });
+
+  // Add subtle Z-axis movement for depth variation
+  const depthTl = gsap.timeline({ repeat: -1, yoyo: true });
+  depthTl.to(cursorLightFar.position, {
+    duration: animationConfig.duration.tertiary / 2,
+    z: `+=${animationConfig.rangeZ}`,
+    ease: "sine.inOut",
+  });
+
+  const depthTl2 = gsap.timeline({ repeat: -1, yoyo: true, delay: 1.5 });
+  depthTl2.to(cursorLightFar2.position, {
+    duration: (animationConfig.duration.tertiary * 1.3) / 2,
+    z: `-=${animationConfig.rangeZ * 0.7}`,
+    ease: "sine.inOut",
+  });
+
+  // Add subtle intensity variation to enhance the effect
+  const intensityTl = gsap.timeline({ repeat: -1, yoyo: true });
+  intensityTl.to(cursorLightFar, {
+    duration: 4,
+    intensity: config.cursorLightFar.intensity * 1.3,
+    ease: "power2.inOut",
+  });
+
+  const intensityTl2 = gsap.timeline({ repeat: -1, yoyo: true, delay: 1 });
+  intensityTl2.to(cursorLightFar2, {
+    duration: 5.5,
+    intensity: config.cursorLightFar.intensity * 1.2,
+    ease: "power2.inOut",
+  });
+
+  console.log(
+    "Infinite lights animation started - desktop-like movement patterns"
+  );
+}
+
+function stopInfiniteLightsAnimation() {
+  if (infiniteLightsAnimation) {
+    infiniteLightsAnimation.kill();
+    infiniteLightsAnimation = null;
+
+    // Reset lights to original intensity
+    if (cursorLightFar) {
+      cursorLightFar.intensity = config.cursorLightFar.intensity;
+    }
+    if (cursorLightFar2) {
+      cursorLightFar2.intensity = config.cursorLightFar.intensity;
+    }
+
+    // Kill all individual timelines
+    gsap.killTweensOf([
+      cursorLightFar,
+      cursorLightFar2,
+      cursorLightFar.position,
+      cursorLightFar2.position,
+    ]);
+
+    console.log("Infinite lights animation stopped");
+  }
 }
 </script>
 

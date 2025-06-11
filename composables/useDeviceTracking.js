@@ -24,10 +24,6 @@ export const useDeviceTracking = class DeviceTracking {
 
     // Enhanced sensitivity settings - mimicking desktop mouse behavior
     this.sensitivity = {
-      // Light position sensitivity
-      lightDepthMultiplier: 1.8,
-      lightRangeMultiplier: 1.5,
-
       // Device rotation sensitivity (similar to mouseMoveFactor in desktop)
       rotationSensitivity: 0.8, // Similar to desktop mouseMoveFactor of 0.05 but scaled for device
       maxRotationSpeed: 0.3, // Limit how fast rotation can change
@@ -37,6 +33,17 @@ export const useDeviceTracking = class DeviceTracking {
 
       // Dead zone to prevent jitter
       deadZone: 0.5, // degrees
+
+      // Light positioning - NEW: Desktop-like behavior
+      lightPositioning: {
+        // Convert device orientation to virtual mouse coordinates
+        mouseRangeX: 2.0, // Virtual mouse range (-1 to 1) * this multiplier
+        mouseRangeY: 1.5, // Virtual mouse range (-1 to 1) * this multiplier
+        smoothing: 0.12, // How smoothly lights follow orientation changes
+        // Sensitivity for converting orientation to mouse-like coordinates
+        orientationToMouseX: 0.015, // Beta to mouse X conversion
+        orientationToMouseY: 0.02, // Gamma to mouse Y conversion
+      },
     };
 
     // Smoothed orientation values
@@ -44,6 +51,10 @@ export const useDeviceTracking = class DeviceTracking {
       beta: 0,
       gamma: 0,
     };
+
+    // Virtual mouse position for desktop-like light behavior
+    this.virtualMouse = new THREE.Vector2(0, 0);
+    this.targetVirtualMouse = new THREE.Vector2(0, 0);
 
     this.handleOrientation = this.handleOrientation.bind(this);
     this.handleMotion = this.handleMotion.bind(this);
@@ -60,7 +71,9 @@ export const useDeviceTracking = class DeviceTracking {
 
     window.addEventListener("devicemotion", this.handleMotion);
     window.addEventListener("deviceorientation", this.handleOrientation);
-    console.log("Enhanced device tracking enabled - desktop-like behavior");
+    console.log(
+      "Enhanced device tracking enabled - desktop-like light behavior"
+    );
   }
 
   handleOrientation(event) {
@@ -139,8 +152,11 @@ export const useDeviceTracking = class DeviceTracking {
       );
     }
 
-    // Update lights with enhanced positioning
-    this.updateLightPositions(alpha, beta, gamma);
+    // NEW: Convert device orientation to virtual mouse coordinates (desktop-like)
+    this.updateVirtualMousePosition(beta, gamma);
+
+    // Update lights using desktop-like positioning
+    this.updateLightPositionsDesktopStyle();
 
     // Store current values as previous for next frame
     this.previousOrientation.alpha = alpha;
@@ -148,44 +164,74 @@ export const useDeviceTracking = class DeviceTracking {
     this.previousOrientation.gamma = this.smoothedOrientation.gamma;
   }
 
-  updateLightPositions(alpha, beta, gamma) {
-    // Convert to radians for light positioning
-    const alphaRad = THREE.MathUtils.degToRad(alpha);
-    const betaRad = THREE.MathUtils.degToRad(beta);
-    const gammaRad = THREE.MathUtils.degToRad(gamma);
+  // NEW: Convert device orientation to virtual mouse coordinates
+  updateVirtualMousePosition(beta, gamma) {
+    const { lightPositioning } = this.sensitivity;
 
-    // Create direction vector from orientation
-    this.euler.set(betaRad, gammaRad, alphaRad, "YXZ");
-    this.quaternion.setFromEuler(this.euler);
+    // Convert orientation angles to mouse-like coordinates
+    // Beta (device tilt forward/back) -> mouse Y
+    // Gamma (device tilt left/right) -> mouse X
 
-    const direction = this.forward.clone().applyQuaternion(this.quaternion);
-    direction.z = 0; // Keep lights at consistent depth
-    direction.normalize();
-
-    // Enhanced light positioning
-    const enhancedDepth =
-      this.config.cursorLightFar.depth * this.sensitivity.lightDepthMultiplier;
-    const { xOffset, smoothing } = this.config.cursorLightFar;
-
-    const basePosition = this.camera.position.clone();
-    const target = basePosition.add(
-      direction.multiplyScalar(
-        enhancedDepth * this.sensitivity.lightRangeMultiplier
-      )
+    // Normalize orientation to mouse range (-1 to 1)
+    const mouseX = THREE.MathUtils.clamp(
+      gamma * lightPositioning.orientationToMouseX,
+      -lightPositioning.mouseRangeX,
+      lightPositioning.mouseRangeX
     );
-    target.z = this.cursorLightFar.position.z;
 
-    const enhancedXOffset = xOffset * 2.0;
+    const mouseY = THREE.MathUtils.clamp(
+      -beta * lightPositioning.orientationToMouseY, // Negative for natural movement
+      -lightPositioning.mouseRangeY,
+      lightPositioning.mouseRangeY
+    );
 
-    // Update light positions
-    this.cursorLightFar.position.lerp(
-      target.clone().add(new THREE.Vector3(enhancedXOffset, 0, 0)),
-      smoothing * 1.5
+    // Set target virtual mouse position
+    this.targetVirtualMouse.set(mouseX, mouseY);
+
+    // Smooth the virtual mouse movement
+    this.virtualMouse.lerp(this.targetVirtualMouse, lightPositioning.smoothing);
+  }
+
+  // NEW: Desktop-style light positioning using virtual mouse
+  updateLightPositionsDesktopStyle() {
+    // Convert virtual mouse coordinates to 3D position (same as desktop updateCursorLightPosition)
+    const mouse3D = new THREE.Vector3(
+      this.virtualMouse.x,
+      this.virtualMouse.y,
+      0.5
     );
-    this.cursorLightFar2.position.lerp(
-      target.clone().add(new THREE.Vector3(-enhancedXOffset, 0, 0)),
-      smoothing * 1.5
-    );
+
+    // Unproject to world coordinates (same as desktop)
+    mouse3D.unproject(this.camera);
+    const direction = mouse3D.sub(this.camera.position).normalize();
+
+    const { cursorLightFar: lightConfig } = this.config;
+
+    // Update first light (same logic as desktop)
+    if (this.cursorLightFar && lightConfig.enabled) {
+      const targetPositionFar = this.camera.position
+        .clone()
+        .add(direction.clone().multiplyScalar(lightConfig.depth));
+      targetPositionFar.x += lightConfig.xOffset;
+
+      this.cursorLightFar.position.lerp(
+        targetPositionFar,
+        lightConfig.smoothing
+      );
+    }
+
+    // Update second light (same logic as desktop)
+    if (this.cursorLightFar2 && lightConfig.enabled) {
+      const targetPositionFar2 = this.camera.position
+        .clone()
+        .add(direction.clone().multiplyScalar(lightConfig.depth));
+      targetPositionFar2.x -= lightConfig.xOffset;
+
+      this.cursorLightFar2.position.lerp(
+        targetPositionFar2,
+        lightConfig.smoothing
+      );
+    }
   }
 
   handleMotion(event) {
@@ -214,6 +260,24 @@ export const useDeviceTracking = class DeviceTracking {
     if (this.rotationOffset) {
       this.rotationOffset.x = 0;
       this.rotationOffset.y = 0;
+    }
+    // Also reset virtual mouse
+    this.virtualMouse.set(0, 0);
+    this.targetVirtualMouse.set(0, 0);
+  }
+
+  // Method to adjust light positioning sensitivity
+  adjustLightSensitivity(orientationToMouseX, orientationToMouseY, smoothing) {
+    if (orientationToMouseX !== undefined) {
+      this.sensitivity.lightPositioning.orientationToMouseX =
+        orientationToMouseX;
+    }
+    if (orientationToMouseY !== undefined) {
+      this.sensitivity.lightPositioning.orientationToMouseY =
+        orientationToMouseY;
+    }
+    if (smoothing !== undefined) {
+      this.sensitivity.lightPositioning.smoothing = smoothing;
     }
   }
 

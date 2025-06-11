@@ -19,7 +19,7 @@ import { useHomeStore } from "@/store/home";
 const homeStore = useHomeStore();
 
 useSeoMeta({
-  title: "Amanita - Fitness Clubnita",
+  title: "Amanita - Fitness Club",
   ogTitle: "Amanita",
   description: "Not a gym. Your evolution.",
   ogDescription: "Not a gym. Your evolution.",

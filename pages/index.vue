@@ -552,7 +552,7 @@ function changePermisionsVisibility(value) {
     .split {
       .soon {
         font-size: 18px;
-        font-family: var(--font-parmigiano-thin);
+        font-family: var(--font-pingl-bold);
         opacity: 0;
         @include mq(max-width 768px) {
           margin-bottom: 5px;
@@ -570,10 +570,10 @@ function changePermisionsVisibility(value) {
         overflow: hidden;
         line-height: 1;
         &:first-child {
-          font-family: var(--font-parmigiano-thin);
+          font-family: var(--font-pingl-light);
         }
         &:last-child {
-          font-family: var(--font-parmigiano-regular);
+          font-family: var(--font-pingl-medium);
         }
       }
     }

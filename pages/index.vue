@@ -579,238 +579,91 @@ function createInfiniteLightsAnimation() {
   const initialLight1 = cursorLightFar.position.clone();
   const initialLight2 = cursorLightFar2.position.clone();
 
-  // Create animation parameters similar to device tracking
+  // Simple animation config
   const animationConfig = {
-    // Movement range (similar to device orientation range)
-    rangeX: 2.5,
-    rangeY: 1.8,
-    rangeZ: 0.8,
+    // Movement range (similar to mouse movement range)
+    rangeX: 1.5,
+    rangeY: 1.2,
 
     // Animation timing
-    duration: {
-      primary: 8, // Main movement cycle
-      secondary: 12, // Secondary wave movement
-      tertiary: 6, // Z-axis movement
-    },
+    duration: 8, // Total cycle duration
 
-    // Offset between the two lights (similar to xOffset in config)
+    // Offset between the two lights
     lightOffset: config.cursorLightFar.xOffset,
-
-    // Base depth from camera (similar to device tracking depth)
-    baseDepth: config.cursorLightFar.depth,
   };
 
-  // Create the infinite timeline
-  infiniteLightsAnimation = gsap.timeline({ repeat: -1 });
+  // Define 5 circular positions (similar to mouse positions)
+  const positions = [
+    { x: 0, y: 0 }, // Center
+    { x: animationConfig.rangeX * 0.8, y: animationConfig.rangeY * 0.6 }, // Top-right
+    { x: animationConfig.rangeX * 0.3, y: animationConfig.rangeY * 1.0 }, // Top
+    { x: -animationConfig.rangeX * 0.6, y: animationConfig.rangeY * 0.4 }, // Top-left
+    { x: -animationConfig.rangeX * 0.9, y: -animationConfig.rangeY * 0.7 }, // Bottom-left
+    { x: animationConfig.rangeX * 0.5, y: -animationConfig.rangeY * 0.8 }, // Bottom-right
+    { x: 0, y: 0 }, // Back to center to complete the loop smoothly
+  ];
+
+  // Create separate infinite timelines for each light
+  const positionDuration = animationConfig.duration / (positions.length - 1); // -1 because we added duplicate center
 
   // === FIRST LIGHT ANIMATION ===
-  // Create circular-like movement using multiple keyframes
+  const light1Timeline = gsap.timeline({ repeat: -1 });
+  positions.forEach((pos, index) => {
+    light1Timeline.to(cursorLightFar.position, {
+      duration: positionDuration,
+      x: initialLight1.x + pos.x,
+      y: initialLight1.y + pos.y,
+      ease: "none", // Linear movement
+    });
+  });
+
+  // === SECOND LIGHT ANIMATION (offset pattern - opposite direction) ===
+  const light2Timeline = gsap.timeline({ repeat: -1 });
+  positions.forEach((pos, index) => {
+    // Reverse the positions for second light to create different pattern
+    const reverseIndex = positions.length - 1 - index;
+    const reversePos = positions[reverseIndex];
+
+    light2Timeline.to(cursorLightFar2.position, {
+      duration: positionDuration,
+      x: initialLight2.x + reversePos.x * 0.7, // Slightly different movement
+      y: initialLight2.y + reversePos.y * 0.8,
+      ease: "none", // Linear movement
+    });
+  });
+
+  // Store both timelines for cleanup
+  infiniteLightsAnimation = [light1Timeline, light2Timeline];
+
+  // Add subtle intensity variation
   infiniteLightsAnimation.to(
-    cursorLightFar.position,
+    cursorLightFar,
     {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight1.x + animationConfig.rangeX * 0.7,
-      y: initialLight1.y + animationConfig.rangeY * 0.5,
-      ease: "power2.inOut",
+      duration: animationConfig.duration / 2,
+      intensity: config.cursorLightFar.intensity * 1.2,
+      ease: "sine.inOut",
+      yoyo: true,
+      repeat: -1,
     },
     0
   );
 
   infiniteLightsAnimation.to(
-    cursorLightFar.position,
+    cursorLightFar2,
     {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight1.x + animationConfig.rangeX * 0.3,
-      y: initialLight1.y + animationConfig.rangeY,
-      ease: "power2.inOut",
-    },
-    animationConfig.duration.primary / 4
-  );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight1.x - animationConfig.rangeX * 0.5,
-      y: initialLight1.y + animationConfig.rangeY * 0.3,
-      ease: "power2.inOut",
-    },
-    animationConfig.duration.primary / 2
-  );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight1.x - animationConfig.rangeX * 0.8,
-      y: initialLight1.y - animationConfig.rangeY * 0.6,
-      ease: "power2.inOut",
-    },
-    (animationConfig.duration.primary / 4) * 3
-  );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight1.x - animationConfig.rangeX * 0.2,
-      y: initialLight1.y - animationConfig.rangeY * 0.9,
-      ease: "power2.inOut",
-    },
-    animationConfig.duration.primary
-  );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight1.x + animationConfig.rangeX * 0.6,
-      y: initialLight1.y - animationConfig.rangeY * 0.4,
-      ease: "power2.inOut",
-    },
-    animationConfig.duration.primary + animationConfig.duration.primary / 4
-  );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight1.x,
-      y: initialLight1.y,
-      ease: "power2.inOut",
-    },
-    animationConfig.duration.primary + animationConfig.duration.primary / 2
-  );
-
-  // === SECOND LIGHT ANIMATION (offset pattern) ===
-  infiniteLightsAnimation.to(
-    cursorLightFar2.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight2.x - animationConfig.rangeX * 0.6,
-      y: initialLight2.y - animationConfig.rangeY * 0.4,
-      ease: "power2.inOut",
+      duration: animationConfig.duration / 3,
+      intensity: config.cursorLightFar.intensity * 1.1,
+      ease: "sine.inOut",
+      yoyo: true,
+      repeat: -1,
     },
     0
   );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar2.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight2.x - animationConfig.rangeX * 0.9,
-      y: initialLight2.y + animationConfig.rangeY * 0.2,
-      ease: "power2.inOut",
-    },
-    animationConfig.duration.primary / 4
-  );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar2.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight2.x - animationConfig.rangeX * 0.3,
-      y: initialLight2.y + animationConfig.rangeY * 0.8,
-      ease: "power2.inOut",
-    },
-    animationConfig.duration.primary / 2
-  );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar2.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight2.x + animationConfig.rangeX * 0.4,
-      y: initialLight2.y + animationConfig.rangeY * 0.7,
-      ease: "power2.inOut",
-    },
-    (animationConfig.duration.primary / 4) * 3
-  );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar2.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight2.x + animationConfig.rangeX * 0.8,
-      y: initialLight2.y - animationConfig.rangeY * 0.1,
-      ease: "power2.inOut",
-    },
-    animationConfig.duration.primary
-  );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar2.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight2.x + animationConfig.rangeX * 0.5,
-      y: initialLight2.y - animationConfig.rangeY * 0.8,
-      ease: "power2.inOut",
-    },
-    animationConfig.duration.primary + animationConfig.duration.primary / 4
-  );
-
-  infiniteLightsAnimation.to(
-    cursorLightFar2.position,
-    {
-      duration: animationConfig.duration.primary / 4,
-      x: initialLight2.x,
-      y: initialLight2.y,
-      ease: "power2.inOut",
-    },
-    animationConfig.duration.primary + animationConfig.duration.primary / 2
-  );
-
-  // === ADDITIONAL LAYER ANIMATIONS ===
-  // Add continuous sine wave on Y axis for breathing effect
-  const breathingTl = gsap.timeline({ repeat: -1, yoyo: true });
-  breathingTl.to(cursorLightFar.position, {
-    duration: animationConfig.duration.secondary / 2,
-    y: `+=${animationConfig.rangeY * 0.4}`,
-    ease: "sine.inOut",
-  });
-
-  const breathingTl2 = gsap.timeline({ repeat: -1, yoyo: true, delay: 2 });
-  breathingTl2.to(cursorLightFar2.position, {
-    duration: (animationConfig.duration.secondary * 0.8) / 2,
-    y: `-=${animationConfig.rangeY * 0.3}`,
-    ease: "sine.inOut",
-  });
-
-  // Add subtle Z-axis movement for depth variation
-  const depthTl = gsap.timeline({ repeat: -1, yoyo: true });
-  depthTl.to(cursorLightFar.position, {
-    duration: animationConfig.duration.tertiary / 2,
-    z: `+=${animationConfig.rangeZ}`,
-    ease: "sine.inOut",
-  });
-
-  const depthTl2 = gsap.timeline({ repeat: -1, yoyo: true, delay: 1.5 });
-  depthTl2.to(cursorLightFar2.position, {
-    duration: (animationConfig.duration.tertiary * 1.3) / 2,
-    z: `-=${animationConfig.rangeZ * 0.7}`,
-    ease: "sine.inOut",
-  });
-
-  // Add subtle intensity variation to enhance the effect
-  const intensityTl = gsap.timeline({ repeat: -1, yoyo: true });
-  intensityTl.to(cursorLightFar, {
-    duration: 4,
-    intensity: config.cursorLightFar.intensity * 1.3,
-    ease: "power2.inOut",
-  });
-
-  const intensityTl2 = gsap.timeline({ repeat: -1, yoyo: true, delay: 1 });
-  intensityTl2.to(cursorLightFar2, {
-    duration: 5.5,
-    intensity: config.cursorLightFar.intensity * 1.2,
-    ease: "power2.inOut",
-  });
 
   console.log(
-    "Infinite lights animation started - desktop-like movement patterns"
+    "Simplified infinite lights animation started - 5 circular positions"
   );
 }
-
 function stopInfiniteLightsAnimation() {
   if (infiniteLightsAnimation) {
     infiniteLightsAnimation.kill();

@@ -21,8 +21,8 @@ export const useDeviceTracking = class DeviceTracking {
       lightRangeMultiplier: 1.5, // Additional range multiplier
 
       // Device rotation sensitivity (using your existing rotationOffset system)
-      rotationMultiplier: 0.3, // Reduced from 3.0 to prevent over-rotation
-      maxDeviceRotation: 0.2, // Reduced from 0.8 to keep statue in view
+      rotationMultiplier: 0.4, // Reduced from 3.0 to prevent over-rotation
+      maxDeviceRotation: 0.8, // Reduced from 0.8 to keep statue in view
 
       // Device tilt ranges - increased for less sensitivity
       maxTiltX: 40, // Increased from 25 for less sensitivity

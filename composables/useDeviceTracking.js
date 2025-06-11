@@ -17,11 +17,11 @@ export const useDeviceTracking = class DeviceTracking {
     // Enhanced sensitivity settings - reduced for better control
     this.sensitivity = {
       // Light position sensitivity
-      lightDepthMultiplier: 1.8, // Multiply the original depth
-      lightRangeMultiplier: 1.5, // Additional range multiplier
+      lightDepthMultiplier: 2.8, // Multiply the original depth
+      lightRangeMultiplier: 2.5, // Additional range multiplier
 
       // Device rotation sensitivity (using your existing rotationOffset system)
-      rotationMultiplier: 0.4, // Reduced from 3.0 to prevent over-rotation
+      rotationMultiplier: 0.6, // Reduced from 3.0 to prevent over-rotation
       maxDeviceRotation: 0.8, // Reduced from 0.8 to keep statue in view
 
       // Device tilt ranges - increased for less sensitivity

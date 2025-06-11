@@ -14,19 +14,19 @@ export const useDeviceTracking = class DeviceTracking {
     this.euler = new THREE.Euler();
     this.quaternion = new THREE.Quaternion();
 
-    // Enhanced sensitivity settings
+    // Enhanced sensitivity settings - reduced for better control
     this.sensitivity = {
       // Light position sensitivity
-      lightDepthMultiplier: 2.5, // Multiply the original depth
-      lightRangeMultiplier: 2.0, // Additional range multiplier
+      lightDepthMultiplier: 1.8, // Multiply the original depth
+      lightRangeMultiplier: 1.5, // Additional range multiplier
 
       // Device rotation sensitivity (using your existing rotationOffset system)
-      rotationMultiplier: 3.0, // Increased sensitivity for device rotation
-      maxDeviceRotation: 0.8, // Maximum rotation from device
+      rotationMultiplier: 0.3, // Reduced from 3.0 to prevent over-rotation
+      maxDeviceRotation: 0.2, // Reduced from 0.8 to keep statue in view
 
-      // Device tilt ranges
-      maxTiltX: 25,
-      maxTiltY: 30,
+      // Device tilt ranges - increased for less sensitivity
+      maxTiltX: 40, // Increased from 25 for less sensitivity
+      maxTiltY: 45, // Increased from 30 for less sensitivity
     };
 
     this.handleOrientation = this.handleOrientation.bind(this);
@@ -65,7 +65,7 @@ export const useDeviceTracking = class DeviceTracking {
     direction.z = 0;
     direction.normalize();
 
-    // Use enhanced multipliers for more dramatic light movement
+    // Enhanced light positioning with more reasonable multipliers
     const enhancedDepth =
       this.config.cursorLightFar.depth * this.sensitivity.lightDepthMultiplier;
     const { xOffset, smoothing } = this.config.cursorLightFar;
@@ -78,16 +78,16 @@ export const useDeviceTracking = class DeviceTracking {
     );
     target.z = this.cursorLightFar.position.z;
 
-    // Enhanced light positioning with increased offset
-    const enhancedXOffset = xOffset * 2.5;
+    // Enhanced light positioning with more reasonable offset
+    const enhancedXOffset = xOffset * 2.0; // Reduced from 2.5
 
     this.cursorLightFar.position.lerp(
       target.clone().add(new THREE.Vector3(enhancedXOffset, 0, 0)),
-      smoothing * 2
+      smoothing * 1.5 // Reduced from 2 for smoother movement
     );
     this.cursorLightFar2.position.lerp(
       target.clone().add(new THREE.Vector3(-enhancedXOffset, 0, 0)),
-      smoothing * 2
+      smoothing * 1.5 // Reduced from 2 for smoother movement
     );
 
     // Enhanced statue rotation using your existing rotationOffset system
@@ -101,26 +101,26 @@ export const useDeviceTracking = class DeviceTracking {
 
       // Apply to your existing rotationOffset system (like mouse movement)
       const deviceRotationX = THREE.MathUtils.clamp(
-        normY * rotationMultiplier,
+        normY * rotationMultiplier * 0.1, // Added extra damping factor
         -maxDeviceRotation,
         maxDeviceRotation
       );
       const deviceRotationY = THREE.MathUtils.clamp(
-        normX * rotationMultiplier,
+        normX * rotationMultiplier * 0.1, // Added extra damping factor
         -maxDeviceRotation,
         maxDeviceRotation
       );
 
-      // Smoothly blend device rotation with existing rotation offset
+      // Smoothly blend device rotation with existing rotation offset - slower lerp
       this.rotationOffset.x = THREE.MathUtils.lerp(
         this.rotationOffset.x,
         deviceRotationX,
-        0.1
+        0.05 // Reduced from 0.1 for slower, smoother transitions
       );
       this.rotationOffset.y = THREE.MathUtils.lerp(
         this.rotationOffset.y,
         deviceRotationY,
-        0.1
+        0.05 // Reduced from 0.1 for slower, smoother transitions
       );
 
       // The statue rotation will be handled by your existing animate() function

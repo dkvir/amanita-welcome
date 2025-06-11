@@ -20,7 +20,7 @@ export const useDeviceTracking = class DeviceTracking {
       lightRange: 3, // Additional range multiplier for light movement
 
       // Statue rotation sensitivity
-      rotationMultiplier: 0.8, // Increased from 0.3 for more dramatic rotation
+      rotationMultiplier: 0.3, // Increased from 0.3 for more dramatic rotation
       rotationSpeed: 0.25, // Increased from 0.1 for faster response
       maxRotation: 0.8, // Increased maximum rotation angle
 

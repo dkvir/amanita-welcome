@@ -561,7 +561,7 @@ function changePermisionsVisibility(value) {
       }
       .lines {
         opacity: var(--split-opacity, 0);
-        font-size: css-clamp(44px, 104px);
+        font-size: css-clamp(34px, 104px);
         color: var(--color-white);
         text-align: center;
       }

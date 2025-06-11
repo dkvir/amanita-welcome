@@ -500,7 +500,10 @@ function animate() {
 function clickToAllow() {
   permisionsVisibility.value = false;
 
-  if (DeviceMotionEvent.requestPermission == "function") {
+  if (
+    typeof DeviceMotionEvent !== "undefined" &&
+    typeof DeviceMotionEvent.requestPermission === "function"
+  ) {
     DeviceMotionEvent.requestPermission()
       .then((permissionState) => {
         console.log("DeviceMotion permission state:", permissionState);

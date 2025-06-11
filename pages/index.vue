@@ -11,13 +11,13 @@
         </div>
       </div>
       <div class="countdown flex-center flex-column">
-        <div class="title">Countdown</div>
+        <!-- <div class="title">Countdown</div>
         <ul class="boxes flex">
           <li v-for="(item, index) in countdown" class="box flex-center">
             <div class="label">{{ item.label }}</div>
             <div class="value">{{ item.value }}</div>
           </li>
-        </ul>
+        </ul> -->
       </div>
     </div>
     <div
@@ -73,16 +73,6 @@ let returnFactor = { value: 0.01 };
 let isMouseMoving = false;
 let mouseTimeout;
 let statueGroup;
-
-let stalker = ref(null);
-let textMouse = {
-  mouseX: 0,
-  mouseY: 0,
-  currentX: 0,
-  currentY: 0,
-  ease: 0.1,
-  easeMove: -0.006,
-};
 
 const config = {
   // Bloom settings
@@ -157,13 +147,12 @@ onMounted(() => {
         duration: 0.9,
         stagger: 0.05,
         onStart: () => {
-          // window.requestAnimationFrame(tick);
-          gsap.to(".countdown", {
-            transform: "translateY(0)",
-            duration: 0.9,
-            delay: 0.5,
-            ease: "back.out(1.7)",
-          });
+          // gsap.to(".countdown", {
+          //   transform: "translateY(0)",
+          //   duration: 0.9,
+          //   delay: 0.5,
+          //   ease: "back.out(1.7)",
+          // });
         },
         onComplete: () => {
           permisionsVisibility.value = true;
@@ -249,9 +238,6 @@ function initRenderer() {
 function onMouseMove(event) {
   if (!isSceneReady) return;
 
-  textMouse.mouseX = event.clientX - window.innerWidth / 2;
-  textMouse.mouseY = event.clientY - window.innerHeight / 2;
-
   lastMouse.x = mouse.x;
   lastMouse.y = mouse.y;
 
@@ -278,20 +264,6 @@ function onMouseMove(event) {
   }
 
   updateCursorLightPosition(event);
-}
-
-function tick() {
-  if (stalker.value) {
-    textMouse.currentX +=
-      (textMouse.mouseX - textMouse.currentX) * textMouse.ease;
-    textMouse.currentY +=
-      (textMouse.mouseY - textMouse.currentY) * textMouse.ease;
-    gsap.set(stalker.value, {
-      x: textMouse.currentX * textMouse.easeMove,
-      y: textMouse.currentY * textMouse.easeMove,
-    });
-    window.requestAnimationFrame(tick);
-  }
 }
 
 function updateCursorLightPosition(event) {
@@ -528,54 +500,58 @@ function animate() {
 function clickToAllow() {
   permisionsVisibility.value = false;
 
-  DeviceMotionEvent.requestPermission()
-    .then((permissionState) => {
-      console.log("DeviceMotion permission state:", permissionState);
-      if (permissionState === "granted") {
-        // Stop any infinite animation before starting device tracking
-        stopInfiniteLightsAnimation();
+  if (DeviceMotionEvent.requestPermission == "function") {
+    DeviceMotionEvent.requestPermission()
+      .then((permissionState) => {
+        console.log("DeviceMotion permission state:", permissionState);
+        if (permissionState === "granted") {
+          // Stop any infinite animation before starting device tracking
+          stopInfiniteLightsAnimation();
 
-        // Use the safer version that works with your existing rotation system
-        const deviceTracking = new useDeviceTracking(
-          camera,
-          {
-            cursorLightFar,
-            cursorLightFar2,
-          },
-          config,
-          statueGroup,
-          rotationOffset // Pass your existing rotationOffset object
-        );
+          // Use the safer version that works with your existing rotation system
+          const deviceTracking = new useDeviceTracking(
+            camera,
+            {
+              cursorLightFar,
+              cursorLightFar2,
+            },
+            config,
+            statueGroup,
+            rotationOffset // Pass your existing rotationOffset object
+          );
 
-        deviceTracking.addEventListeners();
+          deviceTracking.addEventListeners();
 
-        console.log("Device tracking initialized successfully");
-      }
-    })
-    .catch((error) => {
-      console.error("Error requesting device motion permission:", error);
-      permisionsVisibility.value = true;
-    });
+          console.log("Device tracking initialized successfully");
+        } else {
+          createInfiniteLightsAnimation();
+        }
+      })
+      .catch((error) => {
+        console.error("Error requesting device motion permission:", error);
+        permisionsVisibility.value = true;
+      });
+  } else {
+    createInfiniteLightsAnimation();
+  }
 }
 
 function clickToDeny() {
   permisionsVisibility.value = false;
-
-  // Start infinite lights animation as fallback
   createInfiniteLightsAnimation();
-
-  console.log("Device tracking denied - infinite lights animation enabled");
 }
-
 function createInfiniteLightsAnimation() {
   if (!cursorLightFar || !cursorLightFar2 || !camera) return;
 
-  // Kill any existing animation
   if (infiniteLightsAnimation) {
-    infiniteLightsAnimation.kill();
+    // Handle cleanup for array of timelines
+    if (Array.isArray(infiniteLightsAnimation)) {
+      infiniteLightsAnimation.forEach((timeline) => timeline.kill());
+    } else {
+      infiniteLightsAnimation.kill();
+    }
   }
 
-  // Store initial positions
   const initialLight1 = cursorLightFar.position.clone();
   const initialLight2 = cursorLightFar2.position.clone();
 
@@ -632,41 +608,47 @@ function createInfiniteLightsAnimation() {
     });
   });
 
-  // Store both timelines for cleanup
-  infiniteLightsAnimation = [light1Timeline, light2Timeline];
+  // === INTENSITY ANIMATIONS ===
+  // Create separate timelines for intensity variations
+  const intensityTimeline1 = gsap.timeline({ repeat: -1 });
+  intensityTimeline1.to(cursorLightFar, {
+    duration: animationConfig.duration / 2,
+    intensity: config.cursorLightFar.intensity * 1.2,
+    ease: "sine.inOut",
+    yoyo: true,
+    repeat: -1,
+  });
 
-  // Add subtle intensity variation
-  infiniteLightsAnimation.to(
-    cursorLightFar,
-    {
-      duration: animationConfig.duration / 2,
-      intensity: config.cursorLightFar.intensity * 1.2,
-      ease: "sine.inOut",
-      yoyo: true,
-      repeat: -1,
-    },
-    0
-  );
+  const intensityTimeline2 = gsap.timeline({ repeat: -1 });
+  intensityTimeline2.to(cursorLightFar2, {
+    duration: animationConfig.duration / 3,
+    intensity: config.cursorLightFar.intensity * 1.1,
+    ease: "sine.inOut",
+    yoyo: true,
+    repeat: -1,
+  });
 
-  infiniteLightsAnimation.to(
-    cursorLightFar2,
-    {
-      duration: animationConfig.duration / 3,
-      intensity: config.cursorLightFar.intensity * 1.1,
-      ease: "sine.inOut",
-      yoyo: true,
-      repeat: -1,
-    },
-    0
-  );
+  // Store all timelines for cleanup
+  infiniteLightsAnimation = [
+    light1Timeline,
+    light2Timeline,
+    intensityTimeline1,
+    intensityTimeline2,
+  ];
 
   console.log(
     "Simplified infinite lights animation started - 5 circular positions"
   );
 }
+
 function stopInfiniteLightsAnimation() {
   if (infiniteLightsAnimation) {
-    infiniteLightsAnimation.kill();
+    // Handle cleanup for array of timelines
+    if (Array.isArray(infiniteLightsAnimation)) {
+      infiniteLightsAnimation.forEach((timeline) => timeline.kill());
+    } else {
+      infiniteLightsAnimation.kill();
+    }
     infiniteLightsAnimation = null;
 
     // Reset lights to original intensity
@@ -763,58 +745,58 @@ function stopInfiniteLightsAnimation() {
         }
       }
     }
-    .countdown {
-      font-family: var(--font-pingroundgelvariable-regular);
-      padding-bottom: 25px;
-      transform: translateY(150%);
+    // .countdown {
+    //   font-family: var(--font-pingroundgelvariable-regular);
+    //   padding-bottom: 25px;
+    //   transform: translateY(150%);
 
-      .title {
-        color: var(--color-gray);
-        font-size: 14px;
-      }
-      .boxes {
-        margin-top: 10px;
-        border: 2px solid var(--color-gray);
-        border-radius: 40px;
-        padding: 10px;
-        @include mq(max-width 768px) {
-          padding: css-clamp-vw(5px, 10px, 768);
-          border: 1px solid var(--color-gray);
-        }
-        .box {
-          position: relative;
-          @include size(css-clamp(40px, 50px));
-          @include list-distance(left, 10px);
-          border: 2px solid var(--color-gray);
-          border-radius: 50%;
+    //   .title {
+    //     color: var(--color-gray);
+    //     font-size: 14px;
+    //   }
+    //   .boxes {
+    //     margin-top: 10px;
+    //     border: 2px solid var(--color-gray);
+    //     border-radius: 40px;
+    //     padding: 10px;
+    //     @include mq(max-width 768px) {
+    //       padding: css-clamp-vw(5px, 10px, 768);
+    //       border: 1px solid var(--color-gray);
+    //     }
+    //     .box {
+    //       position: relative;
+    //       @include size(css-clamp(40px, 50px));
+    //       @include list-distance(left, 10px);
+    //       border: 2px solid var(--color-gray);
+    //       border-radius: 50%;
 
-          @include mq(max-width 768px) {
-            @include size(css-clamp-vw(30px, 40px, 768));
-            @include list-distance(left, css-clamp-vw(5px, 10px, 768));
-            border: 1px solid var(--color-gray);
-          }
+    //       @include mq(max-width 768px) {
+    //         @include size(css-clamp-vw(30px, 40px, 768));
+    //         @include list-distance(left, css-clamp-vw(5px, 10px, 768));
+    //         border: 1px solid var(--color-gray);
+    //       }
 
-          .value {
-            font-size: 18px;
-            @include mq(max-width 768px) {
-              font-size: css-clamp-vw(14px, 18px, 768);
-            }
-          }
-          .label {
-            position: absolute;
-            top: 150%;
-            left: 50%;
-            transform: translate(-50%, 0);
-            font-size: 12px;
-            text-transform: capitalize;
-            color: var(--color-gray);
-            @include mq(max-width 768px) {
-              font-size: css-clamp-vw(8px, 12px, 768);
-            }
-          }
-        }
-      }
-    }
+    //       .value {
+    //         font-size: 18px;
+    //         @include mq(max-width 768px) {
+    //           font-size: css-clamp-vw(14px, 18px, 768);
+    //         }
+    //       }
+    //       .label {
+    //         position: absolute;
+    //         top: 150%;
+    //         left: 50%;
+    //         transform: translate(-50%, 0);
+    //         font-size: 12px;
+    //         text-transform: capitalize;
+    //         color: var(--color-gray);
+    //         @include mq(max-width 768px) {
+    //           font-size: css-clamp-vw(8px, 12px, 768);
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
   }
   .allow-permisions {
     position: fixed;

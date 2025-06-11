@@ -42,6 +42,7 @@ function clickToAllow() {
       .then((permissionState) => {
         if (permissionState === "granted") {
           stopInfiniteLightsAnimation();
+          emit("hasPermision", true);
         } else {
           createInfiniteLightsAnimation();
         }

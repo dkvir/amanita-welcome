@@ -87,7 +87,7 @@ function createInfiniteLightsAnimation() {
     { x: animationConfig.rangeX * 0.3, y: animationConfig.rangeY * 1.0 },
     { x: -animationConfig.rangeX * 0.6, y: animationConfig.rangeY * 0.4 },
     { x: -animationConfig.rangeX * 0.9, y: -animationConfig.rangeY * 0.7 },
-    { x: animationConfig.rangeX * 0.5, y: -animationConfig.rangeY * 0.8 }, \
+    { x: animationConfig.rangeX * 0.5, y: -animationConfig.rangeY * 0.8 },
     { x: 0, y: 0 },
   ];
 

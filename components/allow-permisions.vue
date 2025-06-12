@@ -2,8 +2,8 @@
   <div class="allow-permisions flex-center flex-column">
     <div class="label">Permissions for mobile sensor access</div>
     <div class="buttons flex">
-      <button @click="clickToAllow" class="button">allow</button>
       <button @click="clickToDeny" class="button">deny</button>
+      <button @click="clickToAllow" class="button">allow</button>
     </div>
   </div>
 </template>
@@ -170,11 +170,11 @@ function stopInfiniteLightsAnimation() {
 <style lang="scss" scoped>
 .allow-permisions {
   position: fixed;
-  top: 50%;
+  bottom: var(--page-offset-padding);
   left: 50%;
   z-index: 1;
   padding: 20px 10px;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, 0);
   backdrop-filter: blur(4px);
   border-radius: 10px;
   border: 1px solid var(--color-gray);
@@ -188,20 +188,39 @@ function stopInfiniteLightsAnimation() {
     --permisions-opacity: 1;
     pointer-events: all;
   }
+  .label {
+    font-size: 15px;
+    font-family: var(--font-pingroundgelvariable-regular);
+    text-align: center;
+  }
   .buttons {
     margin-top: 5px;
     gap: 10px;
   }
   .button {
-    padding: 10px;
+    position: relative;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-top: 10px;
     color: var(--color-white);
     text-transform: capitalize;
+    font-family: var(--font-pingl-bold);
+    overflow: hidden;
     opacity: 0.8;
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      @include size(100%);
+      background-color: var(--button-color);
+      z-index: -1;
+      opacity: 0.5;
+    }
     &:first-child {
-      border-bottom: 1px solid #336eff;
+      --button-color: #f44336;
     }
     &:last-child {
-      border-bottom: 1px solid red;
+      --button-color: #4caf50;
     }
   }
 }

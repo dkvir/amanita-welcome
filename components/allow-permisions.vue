@@ -34,6 +34,12 @@ let infiniteLightsAnimation = null;
 function clickToAllow() {
   emit("changePermisionsVisibility", false);
 
+  console.log(
+    "Device Motion",
+    DeviceMotionEvent,
+    DeviceMotionEvent.requestPermission
+  );
+
   if (
     typeof DeviceMotionEvent !== "undefined" &&
     typeof DeviceMotionEvent.requestPermission === "function"

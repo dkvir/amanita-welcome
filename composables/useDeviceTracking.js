@@ -61,10 +61,7 @@ export const useDeviceTracking = class DeviceTracking {
   }
 
   async addEventListeners() {
-    if (
-      typeof DeviceMotionEvent !== "undefined" &&
-      typeof DeviceMotionEvent.requestPermission === "function"
-    ) {
+    if (typeof DeviceMotionEvent !== "undefined") {
       const state = await DeviceMotionEvent.requestPermission();
       if (state !== "granted") return;
     }

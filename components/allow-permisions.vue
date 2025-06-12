@@ -53,7 +53,6 @@ function clickToAllow() {
       });
   } else {
     emit("hasPermision", true);
-    console.log("emit permisions for android");
   }
 }
 

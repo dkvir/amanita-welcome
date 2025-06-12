@@ -63,11 +63,9 @@ export const useDeviceTracking = class DeviceTracking {
   addEventListeners() {
     window.addEventListener("devicemotion", this.handleMotion);
     window.addEventListener("deviceorientation", this.handleOrientation);
-    console.log("addEventListeners called");
   }
 
   handleOrientation(event) {
-    console.log("handleOrientation", event);
     const { alpha, beta, gamma } = event;
     if (alpha === null || beta === null || gamma === null) return;
 
@@ -226,7 +224,6 @@ export const useDeviceTracking = class DeviceTracking {
   }
 
   handleMotion(event) {
-    console.log("motionEvent", event);
     // Optional: Add subtle vibration effects for strong motion
     const { acceleration } = event;
 

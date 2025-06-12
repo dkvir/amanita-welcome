@@ -11,6 +11,7 @@
         <div class="soon uppercase">coming soon</div>
       </div>
       <!-- <countdown /> -->
+
       <div class="footer"></div>
     </div>
     <allow-permisions

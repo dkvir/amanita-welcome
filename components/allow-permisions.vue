@@ -34,21 +34,12 @@ let infiniteLightsAnimation = null;
 function clickToAllow() {
   emit("changePermisionsVisibility", false);
 
-  console.log(
-    "Device Motion",
-    DeviceMotionEvent,
-    DeviceMotionEvent.requestPermission
-  );
-
-  // Check if we're on iOS Safari (has requestPermission method)
   if (
-    typeof DeviceMotionEvent !== "undefined" &&
+    DeviceMotionEvent &&
     typeof DeviceMotionEvent.requestPermission === "function"
   ) {
-    // iOS Safari - request permission explicitly
     DeviceMotionEvent.requestPermission()
       .then((permissionState) => {
-        console.log("Device Motion Permission State:", permissionState);
         if (permissionState === "granted") {
           stopInfiniteLightsAnimation();
           emit("hasPermision", true);
@@ -60,38 +51,9 @@ function clickToAllow() {
         console.error("Error requesting device motion permission:", error);
         emit("changePermisionsVisibility", true);
       });
-  } else if (typeof DeviceMotionEvent !== "undefined") {
-    // Android or other browsers - check if device motion is available
-    // Try to add a temporary event listener to test if it works
-    const testDeviceMotion = (event) => {
-      // Remove the test listener immediately
-      window.removeEventListener("devicemotion", testDeviceMotion);
-
-      // If we get here, device motion is working
-      console.log("Device motion is available on this device");
-      stopInfiniteLightsAnimation();
-      emit("hasPermision", true);
-    };
-
-    const testTimeout = setTimeout(() => {
-      // If no device motion event fired within 1 second, assume it's not available
-      window.removeEventListener("devicemotion", testDeviceMotion);
-      console.log("Device motion not available or permission denied");
-      createInfiniteLightsAnimation();
-    }, 1000);
-
-    // Add temporary listener to test device motion
-    window.addEventListener("devicemotion", testDeviceMotion, { once: true });
-
-    // For some Android browsers, we might need to assume permission is granted
-    // and let the actual device motion listener handle the case where it's not working
-    // You can also immediately grant permission for Android if you prefer:
-    // stopInfiniteLightsAnimation();
-    // emit("hasPermision", true);
   } else {
-    // Device motion not supported at all
-    console.log("DeviceMotionEvent not supported");
-    createInfiniteLightsAnimation();
+    emit("hasPermision", true);
+    console.log("emit permisions for android");
   }
 }
 

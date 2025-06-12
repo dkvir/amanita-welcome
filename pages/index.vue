@@ -2,13 +2,13 @@
   <div class="home-page">
     <canvas id="canvas"></canvas>
     <div class="container flex-column justify-between align-center">
-      <nuxt-icon name="logo" class="logo set-opacity" filled></nuxt-icon>
+      <nuxt-icon name="logo" class="logo" filled></nuxt-icon>
       <div class="split flex-column flex-center" ref="stalker">
-        <div class="soon uppercase set-opacity">coming soon</div>
         <div class="lines">
           <div class="line-mask uppercase">NOT A GYM.</div>
           <div class="line-mask uppercase">your evolution.</div>
         </div>
+        <div class="soon uppercase">coming soon</div>
       </div>
       <!-- <countdown /> -->
       <div class="footer"></div>
@@ -122,7 +122,7 @@ onMounted(() => {
         opacity: 1,
       });
 
-      gsap.to(".set-opacity", {
+      gsap.to(".logo", {
         opacity: 1,
         duration: 0.9,
         ease: "power2.inOut",
@@ -143,6 +143,11 @@ onMounted(() => {
         //   });
         // },
         onComplete: () => {
+          gsap.to(".soon", {
+            opacity: 1,
+            duration: 0.7,
+            ease: "power2.inOut",
+          });
           permisionsVisibility.value = true;
         },
       });
@@ -552,8 +557,9 @@ function changePermisionsVisibility(value) {
     .split {
       .soon {
         font-size: 18px;
-        font-family: var(--font-pingl-bold);
+        font-family: var(--font-pingl-medium);
         opacity: 0;
+        margin-top: 10px;
         @include mq(max-width 768px) {
           margin-bottom: 5px;
           font-size: css-clamp-vw(14px, 18px, 768);
@@ -561,7 +567,7 @@ function changePermisionsVisibility(value) {
       }
       .lines {
         opacity: var(--split-opacity, 0);
-        font-size: css-clamp(34px, 104px);
+        font-size: css-clamp(44px, 104px);
         color: var(--color-white);
         text-align: center;
       }
@@ -570,7 +576,7 @@ function changePermisionsVisibility(value) {
         overflow: hidden;
         line-height: 1;
         &:first-child {
-          font-family: var(--font-pingl-light);
+          font-family: var(--font-pingl-medium);
         }
         &:last-child {
           font-family: var(--font-parmigiano-light);

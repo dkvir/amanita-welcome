@@ -40,6 +40,7 @@ function clickToAllow() {
   ) {
     DeviceMotionEvent.requestPermission()
       .then((permissionState) => {
+        console.log("Device Motion Permission State:", permissionState);
         if (permissionState === "granted") {
           stopInfiniteLightsAnimation();
           emit("hasPermision", true);

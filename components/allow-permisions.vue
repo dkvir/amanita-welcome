@@ -1,6 +1,6 @@
 <template>
   <div class="allow-permisions flex-center flex-column">
-    <div class="label">Permissions for mobile sensor access</div>
+    <div class="label">Grant permission for full mobile experience</div>
     <div class="buttons flex">
       <button @click="clickToDeny" class="button">deny</button>
       <button @click="clickToAllow" class="button">allow</button>

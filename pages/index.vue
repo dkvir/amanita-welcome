@@ -573,7 +573,7 @@ function changePermisionsVisibility(value) {
           font-family: var(--font-pingl-light);
         }
         &:last-child {
-          font-family: var(--font-pingl-medium);
+          font-family: var(--font-parmigiano-light);
         }
       }
     }

@@ -175,52 +175,55 @@ function stopInfiniteLightsAnimation() {
   z-index: 1;
   padding: 20px 10px;
   transform: translate(-50%, 0);
-  backdrop-filter: blur(4px);
+  background-color: var(--color-black);
   border-radius: 10px;
-  border: 1px solid var(--color-gray);
   width: 80%;
   font-size: 14px;
   opacity: var(--permisions-opacity, 0);
-  transition: opacity 0.4s ease-in-out;
-  transition-delay: 0.5s;
+  transition: opacity 0.9s ease-in-out;
   pointer-events: none;
   &.is-visible {
     --permisions-opacity: 1;
     pointer-events: all;
   }
   .label {
-    font-size: 15px;
-    font-family: var(--font-pingroundgelvariable-regular);
+    width: 75%;
+    font-size: 16px;
+    font-family: var(--font-pingl-regular);
     text-align: center;
   }
   .buttons {
     margin-top: 5px;
-    gap: 10px;
+    gap: 20px;
   }
   .button {
     position: relative;
-    padding: 5px 10px;
-    border-radius: 4px;
+    padding: 10px 35px;
+    font-size: 12px;
+    font-family: var(--font-pingl-medium);
+    border-radius: 20px;
     margin-top: 10px;
-    color: var(--color-white);
+    color: var(--button-color, var(--color-white));
     text-transform: capitalize;
     font-family: var(--font-pingl-bold);
     overflow: hidden;
-    opacity: 0.8;
     &::before {
       content: "";
       position: absolute;
       inset: 0;
+      border-radius: inherit;
       @include size(100%);
-      background-color: var(--button-color);
+      background-color: var(--button-bg);
       z-index: -1;
-      opacity: 0.5;
     }
     &:first-child {
-      --button-color: #f44336;
+      --button-bg: var(--color-black);
+      --button-color: var(--color-gray);
+      border: 1px solid var(--color-gray);
     }
     &:last-child {
-      --button-color: #4caf50;
+      --button-bg: var(--color-sky);
+      --button-color: var(--color-black);
     }
   }
 }

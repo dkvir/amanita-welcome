@@ -149,7 +149,9 @@ onMounted(() => {
             duration: 0.7,
             ease: "power2.inOut",
           });
-          permisionsVisibility.value = true;
+          setTimeout(() => {
+            permisionsVisibility.value = true;
+          }, 500);
         },
       });
     }, 500);

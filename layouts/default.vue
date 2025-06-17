@@ -24,7 +24,7 @@ useSeoMeta({
   ogTitle: "Amanita",
   description: "Not a gym. Your evolution.",
   ogDescription: "Not a gym. Your evolution.",
-  ogImage: config.public.siteUrl + "/images/share.png",
+  ogImage: config.public.siteUrl + "images/share.png",
   twitterCard: "summary_large_image",
 });
 

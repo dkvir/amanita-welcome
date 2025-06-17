@@ -17,13 +17,14 @@
 <script setup>
 import { useHomeStore } from "@/store/home";
 const homeStore = useHomeStore();
+const config = useRuntimeConfig();
 
 useSeoMeta({
   title: "Amanita - Fitness Club",
   ogTitle: "Amanita",
   description: "Not a gym. Your evolution.",
   ogDescription: "Not a gym. Your evolution.",
-  ogImage: "/images/share.png",
+  ogImage: config.public.siteUrl + "/images/share.png",
   twitterCard: "summary_large_image",
 });
 
